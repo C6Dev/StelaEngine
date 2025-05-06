@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <string>
+#include <stdexcept>
 #include <iostream>
 
 namespace Stela {
@@ -11,6 +12,7 @@ namespace Stela {
 		~SWindow();
 
 		void PollEvents();
+		GLFWwindow* GetGLFWwindow() const;
 		void SwapBuffers();
 		void ClearColor(float red, float green, float blue, float alpha);
 		void ClearColorBuffer();

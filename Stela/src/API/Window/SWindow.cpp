@@ -1,12 +1,6 @@
 // Include the header for the SWindow class
 #include "SWindow.hpp"
 
-// Include GLAD for loading OpenGL functions
-#include <glad/glad.h>
-
-// Include standard exception handling
-#include <stdexcept>
-
 namespace Stela {
 
     // Constructor: initializes GLFW, creates the window, sets up OpenGL context, and loads GLAD
@@ -53,6 +47,10 @@ namespace Stela {
     // Polls for window events (e.g., input, window move, resize)
     void SWindow::PollEvents() {
         glfwPollEvents();
+    }
+
+    GLFWwindow* SWindow::GetGLFWwindow() const {
+        return m_Window;
     }
 
     // Swaps the front and back buffers (used for double buffering)
