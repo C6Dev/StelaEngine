@@ -1,0 +1,45 @@
+# Test configuration for CMake
+# This file can be renamed to CMakeLists.txt to test the build system
+
+cmake_minimum_required(VERSION 3.10)
+project(StelaTest VERSION 1.0)
+
+# Enable testing
+enable_testing()
+
+# Include the main CMakeLists.txt
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
+
+# Add a simple test to verify the executable builds correctly
+add_test(
+  NAME BuildTest
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target ${PROJECT_NAME}
+)
+
+# Add a test to verify shader files are copied correctly
+add_test(
+  NAME ShaderFilesTest
+  COMMAND ${CMAKE_COMMAND} -E compare_files_and_directories
+    ${CMAKE_SOURCE_DIR}/Stela/src/Shaders
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/Shaders
+)
+
+# Add a test to verify installation works correctly
+add_test(
+  NAME InstallTest
+  COMMAND ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR} --prefix ${CMAKE_BINARY_DIR}/install_test
+)
+
+# Verify installed executable exists
+add_test(
+  NAME InstallExecutableTest
+  COMMAND ${CMAKE_COMMAND} -E test_exists ${CMAKE_BINARY_DIR}/install_test/bin/${PROJECT_NAME}${CMAKE_EXECUTABLE_SUFFIX}
+)
+
+# Verify installed shader files exist
+add_test(
+  NAME InstallShadersTest
+  COMMAND ${CMAKE_COMMAND} -E test_exists
+    ${CMAKE_BINARY_DIR}/install_test/bin/Shaders/FragmentShader.frag
+    ${CMAKE_BINARY_DIR}/install_test/bin/Shaders/VertexShader.vert
+)

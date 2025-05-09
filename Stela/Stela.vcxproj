@@ -215,6 +215,8 @@
     <Text Include="src\Docs\SourceDocs\API\Window\SWindow Docs.md" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Includes\imgui\examples\example_glfw_wgpu\web\index.html" />
+    <None Include="Includes\imgui\examples\libs\emscripten\shell_minimal.html" />
     <None Include="src\Docs\SourceDocs\API\Input\SInput Docs.md" />
     <None Include="src\Shaders\FragmentShader.frag" />
     <None Include="src\Shaders\VertexShader.vert" />
