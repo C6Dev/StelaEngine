@@ -12,16 +12,32 @@ set(SOURCES
     Stela/src/API/Render/SRender.cpp
     Stela/src/API/Window/SWindow.cpp
     Stela/src/glad.c
+    
+    # ImGui source files
+    Stela/Includes/imgui/imgui.cpp
+    Stela/Includes/imgui/imgui_demo.cpp
+    Stela/Includes/imgui/imgui_draw.cpp
+    Stela/Includes/imgui/imgui_tables.cpp
+    Stela/Includes/imgui/imgui_widgets.cpp
+    Stela/Includes/imgui/backends/imgui_impl_glfw.cpp
+    Stela/Includes/imgui/backends/imgui_impl_opengl3.cpp
 )
 
 # Define include directories
 include_directories(
     ${CMAKE_SOURCE_DIR}/Stela/Includes
     ${CMAKE_SOURCE_DIR}/Stela/src
+    ${CMAKE_SOURCE_DIR}/Stela/Includes/imgui
+    ${CMAKE_SOURCE_DIR}/Stela/Includes/imgui/backends
 )
 
 # Create executable
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+# Add preprocessor definitions for ImGui
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    IMGUI_IMPL_OPENGL_LOADER_GLAD
+)
 
 # Find and link GLFW
 if(WIN32)
@@ -29,7 +45,7 @@ if(WIN32)
     target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Stela/Libs)
     target_link_libraries(${PROJECT_NAME} glfw3)
     
-    # Windows-specific libraries needed for GLFW
+    # Windows-specific libraries needed for GLFW and ImGui
     target_link_libraries(${PROJECT_NAME} opengl32 gdi32 user32 shell32)
 else()
     # On other platforms, try to find GLFW using CMake's find_package

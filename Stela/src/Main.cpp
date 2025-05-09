@@ -3,6 +3,10 @@
 #include <API/Terminal/ANSI/ANSIcolorCode.hpp>
 #include <API/Render/SRender.hpp>
 
+#include <imgui/imgui.h>
+#include <imgui/backends/imgui_impl_glfw.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
+
 float vertices[] = {
 	 0.0f,  0.5f, 0.0f,  // Top center
 	-0.5f, -0.5f, 0.0f,  // Bottom left
@@ -20,6 +24,18 @@ int main() {
    SInput.Init(SWindow.GetGLFWwindow());
    const GLchar* vertexShaderSource = SRender.loadShaderSource("Shaders/VertexShader.vert");
    const GLchar* fragmentShaderSource = SRender.loadShaderSource("Shaders/FragmentShader.frag");
+
+   // Setup Dear ImGui context
+   IMGUI_CHECKVERSION();
+   ImGui::CreateContext();
+   ImGuiIO& io = ImGui::GetIO();
+   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+
+   // Setup Platform/Renderer backends
+   ImGui_ImplGlfw_InitForOpenGL(SWindow.GetGLFWwindow(), true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+   ImGui_ImplOpenGL3_Init();
 
    SRender.initializeBuffers();
    unsigned int VBO = SRender.VBO;
@@ -63,6 +79,40 @@ int main() {
 
    while (!SWindow.ShouldClose()) {
 	   SWindow.PollEvents();
+
+	   // Start the Dear ImGui frame
+	   ImGui_ImplOpenGL3_NewFrame();
+	   ImGui_ImplGlfw_NewFrame();
+	   ImGui::NewFrame();
+
+	   // Create a fullscreen window for the dockspace
+	   ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	   ImGuiViewport* viewport = ImGui::GetMainViewport();
+	   ImGui::SetNextWindowPos(viewport->WorkPos);
+	   ImGui::SetNextWindowSize(viewport->WorkSize);
+	   ImGui::SetNextWindowViewport(viewport->ID);
+	   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	   window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	   window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	   window_flags |= ImGuiWindowFlags_NoBackground;
+
+	   ImGui::Begin("Editor", nullptr, window_flags);
+	   ImGui::PopStyleVar(2);
+
+	   // DockSpace ID
+	   ImGuiID dockspace_id = ImGui::GetID("EditorDockspace");
+	   ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+	   ImGui::End();
+	   
+
+	   ImGui::Begin("Properties");
+	   ImGui::Text("Wireframe Mode");
+	   ImGui::Checkbox("Wireframe", &wireframe);
+	   ImGui::End();
+
+
 	   SWindow.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	   SWindow.ClearColorBuffer();
 	   SRender.UseProgram(shaderProgram);
@@ -75,6 +125,10 @@ int main() {
 	   else {
 		   SRender.PolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	   }
+
+	   ImGui::Render();
+	   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
        SWindow.SwapBuffers();
        SInput.Input(GLFW_KEY_ESCAPE, [&] {
            glfwSetWindowShouldClose(SWindow.GetGLFWwindow(), true);
@@ -89,6 +143,9 @@ int main() {
 		   });
    }
 
+   ImGui_ImplOpenGL3_Shutdown();
+   ImGui_ImplGlfw_Shutdown();
+   ImGui::DestroyContext();
    SRender.~SRender();
    SWindow.~SWindow();
    std::cout << RESET;
