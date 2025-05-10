@@ -15,18 +15,19 @@ Stela is a graphics application using OpenGL with GLFW and ImGui.
 #### Windows
 ```powershell
 # Clone the repository
-git clone https://github.com/yourusername/Stela.git
-cd Stela
+git clone https://github.com/C6Dev/StelaEngine.git
+cd StelaEngine
 
 # Build the project
 ./build.bat
 ```
 
 #### Linux/macOS
+Please note macos currently dose not work and linux has not been tested but should.
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/Stela.git
-cd Stela
+git clone https://github.com/C6Dev/StelaEngine.git
+cd StelaEngine
 
 # Make build script executable
 chmod +x build.sh
