@@ -14,27 +14,18 @@ fi
 
 # Create build directory if it doesn't exist
 mkdir -p build
-cd build
 
-# Configure the project
-echo "Configuring project..."
-cmake ..
-if [ $? -ne 0 ]; then
-    echo "Error: CMake configuration failed."
-    exit 1
-fi
+# Configure with CMake
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 
 # Build the project
-echo "Building project..."
-cmake --build .
-if [ $? -ne 0 ]; then
-    echo "Error: Build failed."
-    exit 1
+cmake --build build --config Release
+
+# Check if build was successful
+if [ $? -eq 0 ]; then
+    echo "Build completed successfully!"
+    echo "Executable is located at: build/Stela"
+else
+    echo "Build failed with error code $?"
+    exit $?
 fi
-
-echo ""
-echo "Build completed successfully!"
-echo "The executable is located in build/Stela"
-echo ""
-
-cd ..

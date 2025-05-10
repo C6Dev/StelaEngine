@@ -1,3 +1,14 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # Prerequisites
 *.d
 
@@ -30,3 +41,12 @@
 *.exe
 *.out
 *.app
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+Testing/
