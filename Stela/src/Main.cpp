@@ -3,6 +3,7 @@
 #include <API/Terminal/ANSI/ANSIcolorCode.hpp>
 #include <API/Render/SRender.hpp>
 #include <API/UI/Theme.hpp>
+#include "API/Config.hpp"
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
@@ -23,6 +24,17 @@ int main() {
    Stela::SWindow SWindow(800, 600, "Stela");
    Stela::SInput SInput;
    SInput.Init(SWindow.GetGLFWwindow());
+
+   // Load window position and size from config
+   if (Stela::Config::ConfigManager::GetInstance().LoadConfig()) {
+       glfwSetWindowPos(SWindow.GetGLFWwindow(), 
+           Stela::Config::ConfigManager::GetInstance().GetValue<int>("WindowPosX", 100),
+           Stela::Config::ConfigManager::GetInstance().GetValue<int>("WindowPosY", 100));
+       glfwSetWindowSize(SWindow.GetGLFWwindow(),
+           Stela::Config::ConfigManager::GetInstance().GetValue<int>("WindowWidth", 800),
+           Stela::Config::ConfigManager::GetInstance().GetValue<int>("WindowHeight", 600));
+   }
+
    const GLchar* vertexShaderSource = SRender.loadShaderSource("Shaders/VertexShader.vert");
    const GLchar* fragmentShaderSource = SRender.loadShaderSource("Shaders/FragmentShader.frag");
 
@@ -32,10 +44,11 @@ int main() {
    ImGuiIO& io = ImGui::GetIO();
    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 
    // Setup Platform/Renderer backends
-   ImGui_ImplGlfw_InitForOpenGL(SWindow.GetGLFWwindow(), true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+   ImGui_ImplGlfw_InitForOpenGL(SWindow.GetGLFWwindow(), true);
    ImGui_ImplOpenGL3_Init();
 
    // Setup custom theme
@@ -79,11 +92,27 @@ int main() {
    SRender.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
    SRender.EnableVertexAttribArray(0);
 
-   bool wireframe = false;
-   bool show_properties = false;
+   bool wireframe = Stela::Config::ConfigManager::GetInstance().GetValue<bool>("Wireframe", false);
+   bool show_properties = Stela::Config::ConfigManager::GetInstance().GetValue<bool>("ShowProperties", false);
 
    while (!SWindow.ShouldClose()) {
 	   SWindow.PollEvents();
+
+       // Save window position and size when they change
+       int xpos, ypos, width, height;
+       glfwGetWindowPos(SWindow.GetGLFWwindow(), &xpos, &ypos);
+       glfwGetWindowSize(SWindow.GetGLFWwindow(), &width, &height);
+       
+       auto& config = Stela::Config::ConfigManager::GetInstance();
+       if (xpos != config.GetValue<int>("WindowPosX", 100) || 
+           ypos != config.GetValue<int>("WindowPosY", 100) ||
+           width != config.GetValue<int>("WindowWidth", 800) || 
+           height != config.GetValue<int>("WindowHeight", 600)) {
+           config.SetValue("WindowPosX", xpos);
+           config.SetValue("WindowPosY", ypos);
+           config.SetValue("WindowWidth", width);
+           config.SetValue("WindowHeight", height);
+       }
 
 	   // Start the Dear ImGui frame
 	   ImGui_ImplOpenGL3_NewFrame();
@@ -100,6 +129,9 @@ int main() {
            }
            if (ImGui::BeginMenu("Tools")) {
                ImGui::MenuItem("Properties", NULL, &show_properties);
+               if (ImGui::IsItemEdited()) {
+                   config.SetValue("ShowProperties", show_properties);
+               }
                ImGui::EndMenu();
            }
            ImGui::EndMainMenuBar();
@@ -128,9 +160,13 @@ int main() {
 	   
        // Properties window
        if (show_properties) {
-           ImGui::Begin("Properties", &show_properties);
+           ImGuiWindowFlags properties_flags = ImGuiWindowFlags_NoCollapse;
+           ImGui::Begin("Properties", &show_properties, properties_flags);
            ImGui::Text("Wireframe Mode");
            ImGui::Checkbox("Wireframe", &wireframe);
+           if (ImGui::IsItemEdited()) {
+               config.SetValue("Wireframe", wireframe);
+           }
            ImGui::End();
        }
 
@@ -152,6 +188,14 @@ int main() {
 	   ImGui::Render();
 	   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+       // Update and Render additional Platform Windows
+       if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+           GLFWwindow* backup_current_context = glfwGetCurrentContext();
+           ImGui::UpdatePlatformWindows();
+           ImGui::RenderPlatformWindowsDefault();
+           glfwMakeContextCurrent(backup_current_context);
+       }
+
        SWindow.SwapBuffers();
        SInput.Input(GLFW_KEY_ESCAPE, [&] {
            glfwSetWindowShouldClose(SWindow.GetGLFWwindow(), true);
@@ -162,7 +206,8 @@ int main() {
 		   }
 		   else if (wireframe == false) {
 			   wireframe = true;
-		   }
+           }
+           config.SetValue("Wireframe", wireframe);
 		   });
    }
 
