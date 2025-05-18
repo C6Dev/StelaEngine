@@ -1,4 +1,0 @@
-[submodule "Stela/Includes/imgui"]
-	path = Stela/Includes/imgui
-	url = https://github.com/ocornut/imgui.git
-	branch = docking
