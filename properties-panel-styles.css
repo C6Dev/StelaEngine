@@ -1,0 +1,197 @@
+/* Properties Panel (Right Panel Content) */
+#properties-panel {
+    background-color: transparent; 
+    border: none;
+    box-shadow: none;
+    padding: 0; 
+    margin-bottom: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9em; /* Base font size for panel */
+}
+
+#selected-object-indicator {
+    font-style: italic;
+    color: #888888;
+    margin-bottom: 8px; /* Reduced margin */
+    font-size: 0.85em;
+}
+
+.property-group {
+    margin-bottom: 12px; /* Reduced margin */
+}
+
+.property-group.disabled {
+    opacity: 0.5; /* More pronounced disabled state */
+    pointer-events: none;
+}
+
+.property-group h4 {
+    font-size: 0.9em; /* Slightly smaller */
+    color: #D0D0D0;
+    margin-top: 0;
+    margin-bottom: 6px; /* Reduced margin */
+}
+
+.property-group label {
+    display: inline-block;
+    margin-bottom: 2px;
+    font-size: 0.8em; /* Smaller labels */
+    color: #BBBBBB;
+    width: auto; /* Let label width be natural for X,Y,Z */
+    min-width: 15px; /* Ensure some space for short labels */
+    text-align: right;
+    margin-right: 5px;
+}
+/* Label for full-width input like Name */
+.property-group > label:first-child {
+    display: block; /* Make "Name:" label block */
+    text-align: left;
+    width: auto;
+    margin-right: 0;
+}
+
+
+.property-group input[type="text"],
+.property-group input[type="number"],
+.property-group select { /* Combined style for inputs and selects */
+    width: 100%; 
+    padding: 5px; /* Reduced padding */
+    background-color: #3C3C3C; /* Dark input background */
+    border: 1px solid #303030; /* Darker border */
+    border-radius: 2px; /* Sharper radius */
+    color: #E0E0E0;
+    font-size: 0.9em; /* Input font size relative to panel base */
+    box-sizing: border-box;
+}
+.property-group #prop-name {
+     width: 100%; 
+}
+
+/* Parenting Group */
+#object-parenting-group select { 
+    /* Uses combined style above */
+}
+
+/* Camera Attachment */
+#object-camera-group button {
+    width: 100%;
+    padding: 5px 8px;
+    margin-top: 4px;
+    background-color: #0E639C; /* Accent blue */
+    color: white;
+    border: 1px solid #005280; /* Darker border for accent */
+    cursor: pointer;
+    border-radius: 2px;
+    font-size: 0.85em;
+}
+#object-camera-group button:hover {
+    background-color: #005280;
+}
+#object-camera-group button#clear-active-camera-btn {
+    background-color: #A12622; /* Muted danger red */
+    border-color: #721C1A;
+}
+#object-camera-group button#clear-active-camera-btn:hover {
+    background-color: #721C1A;
+}
+#camera-attachment-status {
+    font-size: 0.8em;
+    color: #AAAAAA;
+    margin-bottom: 4px;
+}
+
+/* Script Components */
+#object-scripts-group h4 {
+    margin-top: 12px; 
+}
+#script-component-list {
+    margin-bottom: 8px;
+    max-height: 120px; 
+    overflow-y: auto;
+    border: 1px solid #000000;
+    padding: 4px;
+    background-color: #1E1E1E; /* Dark list background */
+    border-radius: 2px;
+}
+.script-component-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 4px;
+    font-size: 0.8em;
+    background-color: #2A2A2D; /* Subtle item background */
+    margin-bottom: 2px;
+    border-radius: 2px;
+}
+.script-component-item span {
+    color: #BBBBBB;
+}
+.script-component-item button.remove-script-component-btn {
+    background-color: #555555;
+    color: #DDDDDD;
+    border: none;
+    padding: 1px 5px;
+    font-size: 0.75em;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.script-component-item button.remove-script-component-btn:hover {
+    background-color: #777777;
+}
+
+#add-script-component-controls {
+    display: flex;
+    gap: 4px;
+}
+#add-script-component-controls select {
+    /* Uses combined style */
+    flex-grow: 1;
+    font-size: 0.85em; /* Match button */
+}
+#add-script-component-controls button {
+    /* Uses camera button style base */
+    padding: 5px 8px;
+    font-size: 0.85em;
+}
+#add-script-component-controls button:disabled {
+    background-color: #404040 !important;
+    border-color: #303030 !important;
+    color: #777777 !important;
+}
+
+.vector3-input {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    gap: 4px;
+}
+
+.vector3-input label { 
+    width: auto;
+    margin-right: 3px;
+    line-height: 24px; /* Align with input height */
+}
+.vector3-input input[type="number"] {
+    flex-grow: 1;
+    width: auto; 
+    min-width: 40px; 
+}
+
+
+#delete-object-btn {
+    background-color: #A12622; /* Muted danger red */
+    color: white;
+    border: 1px solid #721C1A;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-size: 0.9em;
+    width: 100%;
+    margin-top: 8px;
+}
+
+#delete-object-btn:hover {
+    background-color: #721C1A;
+}

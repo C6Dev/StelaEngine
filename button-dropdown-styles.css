@@ -1,0 +1,72 @@
+.menu-bar {
+    display: flex;
+    gap: 8px;
+}
+
+.menu-bar button, .dropdown-btn {
+    background-color: #3C3C3C;
+    color: #CCCCCC;
+    border: 1px solid #303030;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-size: 0.85em;
+    transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.menu-bar button#play-game-btn {
+    background-color: #28a745;
+    border-color: #1e7e34;
+}
+.menu-bar button#play-game-btn:hover {
+    background-color: #218838;
+}
+.menu-bar button#stop-game-btn {
+    background-color: #dc3545;
+    border-color: #b02a37;
+}
+.menu-bar button#stop-game-btn:hover {
+    background-color: #c82333;
+}
+
+.menu-bar button:hover, .dropdown-btn:hover {
+    background-color: #4A4A4A;
+    border-color: #404040;
+}
+.menu-bar button:disabled, .dropdown-btn:disabled {
+    background-color: #303030 !important;
+    color: #777777 !important;
+    border-color: #252525 !important;
+    cursor: not-allowed;
+}
+
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #252526;
+    min-width: 160px;
+    box-shadow: 0px 5px 12px 0px rgba(0,0,0,0.5);
+    z-index: 1001;
+    border-radius: 2px;
+    border: 1px solid #000000;
+    right: 0;
+}
+
+.dropdown-content a {
+    color: #CCCCCC;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    font-size: 0.85em;
+}
+
+.dropdown-content a:hover {
+    background-color: #0E639C;
+    color: #FFFFFF;
+}

@@ -1,0 +1,61 @@
+#center-tabs, #bottom-tabs {
+    display: flex;
+    background-color: #2D2D2D; 
+    border-bottom: 1px solid #000000;
+    flex-shrink: 0;
+    height: 30px; 
+}
+
+.tab-btn {
+    padding: 0 12px; 
+    line-height: 30px; 
+    cursor: pointer;
+    background-color: #2D2D2D;
+    border: none;
+    border-right: 1px solid #000000;
+    color: #AAAAAA; 
+    font-size: 0.85em;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+.tab-btn:last-child {
+    border-right: none;
+}
+.tab-btn.active {
+    background-color: #1E1E1E; 
+    color: #FFFFFF; 
+    border-bottom: 1px solid #1E1E1E; 
+    position: relative;
+}
+.tab-btn:hover:not(.active) {
+    background-color: #383838;
+    color: #DDDDDD;
+}
+.tab-btn.active:hover {
+    background-color: #1E1E1E; 
+}
+
+.tab-content {
+    display: none;
+    height: 100%;
+    width: 100%;
+    overflow: auto; 
+    box-sizing: border-box;
+}
+.tab-content.active {
+    display: block; 
+}
+
+#scene-view-content, 
+#script-editor-content, 
+#visual-script-editor-content {
+    background-color: #1E1E1E; 
+}
+
+#bottom-tabs .tab-btn.active {
+    background-color: #1E1E1E; 
+    border-bottom-color: #1E1E1E;
+}
+
+#bottom-tabs {
+    background-color: #2D2D2D;
+}

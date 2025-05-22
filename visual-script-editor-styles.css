@@ -1,0 +1,230 @@
+#visual-script-editor-content { 
+    display: none; 
+    flex-direction: column;
+    text-align: center;
+    color: #AAAAAA; 
+    font-size: 1.2em;
+}
+
+#visual-script-editor-content.active { 
+    display: flex; 
+}
+
+#visual-script-toolbar {
+    width: 100%; 
+    padding: 5px 8px; 
+    background-color: #2D2D2D; 
+    border-bottom: 1px solid #000000;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    height: 36px; 
+}
+
+#visual-script-toolbar button,
+#visual-script-toolbar select {
+    padding: 4px 8px; 
+    background-color: #3C3C3C; 
+    color: #CCCCCC;
+    border: 1px solid #303030;
+    border-radius: 2px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+#visual-script-toolbar button:hover,
+#visual-script-toolbar select:hover {
+    background-color: #4A4A4A;
+}
+
+#visual-script-graph-container {
+    flex-grow: 1;
+    width: 100%; 
+    position: relative; 
+    background-color: #202020; 
+    overflow: hidden; 
+    background-image: 
+        linear-gradient(rgba(200,200,200,0.08) 1px, transparent 1px), 
+        linear-gradient(90deg, rgba(200,200,200,0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    cursor: default; 
+}
+
+#visual-script-svg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%; 
+    pointer-events: none; 
+    transform-origin: 0 0; 
+}
+
+#visual-script-nodes-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%; 
+    transform-origin: 0 0; 
+}
+
+#vs-marquee-selection-rect {
+    position: absolute;
+    border: 1px dashed #007ACC; 
+    background-color: rgba(0, 122, 204, 0.1);
+    pointer-events: none; 
+    z-index: 100; 
+    box-sizing: border-box;
+}
+
+.visual-script-node {
+    position: absolute;
+    background-color: #2D2D30; 
+    border: 1px solid #000000; 
+    border-radius: 4px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35); 
+    padding: 0;
+    cursor: grab;
+    min-width: 170px; 
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    font-size: 0.9em; 
+}
+.visual-script-node.dragging {
+    cursor: grabbing;
+    opacity: 0.85;
+}
+.visual-script-node.selected {
+    border-color: #0E639C; 
+    box-shadow: 0 0 6px rgba(14, 99, 156, 0.6), 0 2px 8px rgba(0,0,0,0.35);
+}
+
+.vs-node-header {
+    background-color: #38383D; 
+    color: #E0E0E0;
+    padding: 8px 12px; 
+    font-weight: bold;
+    border-top-left-radius: 3px; 
+    border-top-right-radius: 3px;
+    border-bottom: 1px solid #000000;
+    text-align: center;
+    font-size: 0.9em; 
+}
+
+.vs-node-content {
+    padding: 10px 12px; 
+    display: flex;
+    flex-direction: column;
+    gap: 8px; 
+}
+
+.vs-node-field { 
+    display: flex;
+    flex-direction: column; 
+    gap: 2px; 
+}
+.vs-node-field.disabled input {
+    background-color: #252526 !important; 
+    color: #777777 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.vs-node-field.disabled label {
+    opacity: 0.6;
+}
+
+.vs-node-pins {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0; 
+}
+
+.vs-node-input-pins, .vs-node-output-pins {
+    display: flex;
+    flex-direction: column;
+    gap: 6px; 
+}
+
+.vs-pin {
+    width: 14px; 
+    height: 14px;
+    background-color: #5A5A5A; 
+    border: 1px solid #202020; 
+    border-radius: 50%;
+    cursor: pointer;
+    position: absolute; 
+    z-index: 1; 
+    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+.vs-pin:hover {
+    background-color: #007ACC; 
+    border-color: #005280;
+}
+.vs-pin.input {
+    left: -7px; 
+    top: 50%;
+    transform: translateY(-50%);
+}
+.vs-pin.output {
+    right: -7px; 
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.vs-pin-label {
+    font-size: 0.75em; 
+    color: #AAAAAA;
+    line-height: 14px; 
+    white-space: nowrap; 
+}
+
+.vs-node-row {
+    display: flex;
+    align-items: center;
+    position: relative; 
+    min-height: 18px; 
+    padding: 0 4px; 
+}
+
+.vs-node-row.input-row .vs-pin-label {
+    margin-left: 10px; 
+}
+
+.vs-node-row.output-row { flex-direction: row-reverse; }
+.vs-node-row.output-row .vs-pin-label {
+    margin-right: 10px; 
+}
+
+.vs-node-content input[type="text"],
+.vs-node-content input[type="number"],
+.vs-node-content select {
+    background-color: #3C3C3C; 
+    border: 1px solid #222222; 
+    border-radius: 2px;
+    color: #D4D4D4;
+    font-size: 0.9em; 
+    padding: 3px; 
+    width: calc(100% - 8px); 
+    box-sizing: border-box;
+}
+.vs-node-content label {
+    font-size: 0.8em; 
+    color: #BBBBBB; 
+    margin-bottom: 1px;
+}
+
+.vs-connection-line {
+    stroke: #6FA8DC; 
+    stroke-width: 2px;
+    fill: none;
+}
+.vs-connection-line-pending {
+    stroke: #FFB366; 
+    stroke-width: 2px;
+    stroke-dasharray: 4,4; 
+    fill: none;
+}

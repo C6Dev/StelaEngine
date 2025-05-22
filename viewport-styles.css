@@ -1,0 +1,11 @@
+#viewer-container {
+    flex-grow: 1; 
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: #1E1E1E; /* Updated to match scene background */
+}
+
+canvas {
+    display: block;
+}

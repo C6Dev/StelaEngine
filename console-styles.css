@@ -1,0 +1,30 @@
+/* Console Output (Bottom Panel Tab) */
+#console-content {
+     /* .tab-content.active styling applies */
+}
+
+#script-output-label {
+    font-weight: normal; 
+    font-size: 0.8em; 
+    margin-bottom: 4px;
+    color: #AAAAAA;
+    flex-shrink: 0;
+}
+
+#script-output {
+    flex-grow: 1;
+    background-color: #1E1E1E; 
+    border: 1px solid #000000; 
+    padding: 6px; 
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-radius: 2px; 
+    color: #CCCCCC; 
+    overflow-y: auto;
+}
+
+#script-output.error {
+    color: #F48771; 
+}

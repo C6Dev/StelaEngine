@@ -1,0 +1,61 @@
+#script-editor-content {
+    display: none; 
+    flex-direction: column;
+    padding: 0; 
+}
+#script-editor-content.active {
+    display: flex; 
+}
+
+#script-input {
+    flex-grow: 1; 
+    width: 100%; 
+    padding: 8px; 
+    margin-bottom: 0; 
+    border: none; 
+    border-bottom: 1px solid #000000; 
+    border-radius: 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    background-color: #1E1E1E; 
+    color: #D4D4D4; 
+    resize: none; 
+    box-sizing: border-box;
+}
+
+#script-controls {
+    flex-shrink: 0;
+    padding: 6px 8px; 
+    background-color: #252526; 
+}
+#script-controls button {
+    background-color: #3C3C3C; 
+    color: #CCCCCC;
+    border: 1px solid #303030;
+    padding: 5px 10px;
+    margin-right: 5px;
+    margin-bottom: 0; 
+    cursor: pointer;
+    border-radius: 2px;
+    font-size: 0.8em;
+    transition: background-color 0.1s ease;
+}
+
+#script-controls button:hover {
+    background-color: #4A4A4A;
+}
+
+#script-controls button#clear-active-script-btn { 
+    background-color: #6D2B2A; 
+    border-color: #50201F;
+}
+#script-controls button#clear-active-script-btn:hover {
+    background-color: #50201F;
+}
+#script-controls button#save-script-btn {
+    background-color: #0E639C; 
+    border-color: #005280;
+}
+#script-controls button#save-script-btn:hover {
+    background-color: #005280;
+}
