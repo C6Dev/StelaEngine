@@ -1,0 +1,504 @@
+:root {
+    --bg-color: #101010; /* Slightly darker background */
+    --surface-color: #1c1c1e; /* Apple-like surface color */
+    --primary-color: #0A84FF; /* Apple blue */
+    --primary-variant-color: #007AFF; /* Darker Apple blue */
+    --secondary-color: #BB86FC; /* Kept for now, use sparingly */
+    --text-color: #F5F5F7; /* Apple off-white text */
+    --text-color-secondary: #8A8A8E; /* Apple secondary text */
+    --border-color: #38383A; /* Apple-like border */
+
+    --font-family-sans: 'Inter', 'Arial', sans-serif;
+    --font-family-heading: 'Manrope', 'Orbitron', sans-serif;
+
+    --header-height: 65px; /* Define header height for calculations */
+
+    /* Stela Engine Green Theme Colors */
+    --stela-green-primary: #2ECC71;
+    --stela-green-variant: #27AE60;
+    --stela-green-shadow-primary: rgba(46, 204, 113, 0.2);
+    --stela-green-shadow-hover: rgba(46, 204, 113, 0.3);
+
+    /* Default (Blue) Theme Shadows for Button */
+    --blue-shadow-primary: rgba(0, 122, 255, 0.2);
+    --blue-shadow-hover: rgba(0, 122, 255, 0.3);
+}
+
+/* Import modern fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap');
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family-sans);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.7; /* Increased line height */
+    font-size: 17px; /* Slightly larger base font size */
+    -webkit-font-smoothing: antialiased; /* Smoother fonts on WebKit */
+    -moz-osx-font-smoothing: grayscale; /* Smoother fonts on Firefox */
+    opacity: 0; /* Initially hidden for page transition */
+    transition: opacity 0.4s ease-in-out; /* Page transition effect */
+}
+
+body.page-loaded {
+    opacity: 1;
+}
+
+body.page-leaving {
+    opacity: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px; /* Slightly more padding */
+}
+
+/* Header */
+header {
+    background-color: rgba(28, 28, 30, 0.8); /* Semi-transparent surface color */
+    backdrop-filter: blur(10px); /* Frosted glass effect */
+    -webkit-backdrop-filter: blur(10px);
+    padding: 0.8rem 0; /* Adjusted padding */
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    height: var(--header-height);
+    box-sizing: border-box;
+}
+
+header.scrolled {
+    background-color: var(--surface-color); /* Solid on scroll */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-color);
+}
+
+.logo-img {
+    height: 36px; /* Slightly adjusted */
+    margin-right: 12px;
+}
+
+header h1 {
+    font-family: var(--font-family-heading);
+    font-weight: 700;
+    font-size: 1.7rem; /* Adjusted */
+    margin: 0;
+    color: var(--primary-color); /* Will be themed */
+}
+
+#nav-toggle {
+    display: none; /* Shown on mobile via media query */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px; /* Increased padding for better tap area */
+    z-index: 1001; /* Ensure it's above other header elements if needed */
+    position: relative; /* For span positioning if needed, not strictly necessary here */
+    width: 45px; /* Explicit width for tap area consistency */
+    height: 45px; /* Explicit height for tap area consistency */
+    box-sizing: border-box;
+}
+
+#nav-toggle span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: var(--text-color);
+    border-radius: 2px;
+    transition: all 0.3s ease-in-out;
+    position: relative; /* To allow transform-origin to work as expected if needed */
+}
+
+#nav-toggle span:nth-child(1) {
+    /* transform-origin: left center; */
+}
+#nav-toggle span:nth-child(2) {
+    margin-top: 6px;
+    margin-bottom: 6px;
+    /* transform-origin: left center; */
+}
+#nav-toggle span:nth-child(3) {
+    /* transform-origin: left center; */
+}
+
+body.nav-open #nav-toggle span:nth-child(1) {
+    transform: translateY(9px) rotate(45deg);
+}
+body.nav-open #nav-toggle span:nth-child(2) {
+    opacity: 0;
+    transform: translateX(10px); /* Optional: slide out */
+}
+body.nav-open #nav-toggle span:nth-child(3) {
+    transform: translateY(-9px) rotate(-45deg);
+}
+
+#main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+#main-nav li {
+    margin-left: 25px; /* More spacing */
+}
+
+#main-nav a {
+    text-decoration: none;
+    color: var(--text-color-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.3s ease;
+    padding: 5px 0;
+}
+
+#main-nav a:hover, #main-nav a.active {
+    color: var(--primary-color);
+}
+
+/* Main Content */
+main {
+    padding: 0; /* Remove default padding, sections will handle it */
+}
+
+section {
+    padding: 5rem 0; /* Increased padding */
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden; /* Prevent scrollbars from early animation states */
+}
+section:last-child {
+    border-bottom: none;
+}
+
+h2, h3, h4 {
+    font-family: var(--font-family-heading);
+    font-weight: 700;
+    color: var(--text-color); /* Headings primarily white/light */
+    margin-top: 0;
+    margin-bottom: 1.5rem; /* More spacing */
+}
+h2 { font-size: 2.8rem; line-height: 1.2; }
+h3 { font-size: 2.2rem; line-height: 1.3; }
+h4 { font-size: 1.6rem; line-height: 1.4; }
+
+p {
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+}
+section p:last-of-type {
+    margin-bottom: 0;
+}
+
+strong, .highlight {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+#hero {
+    text-align: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: var(--text-color);
+    padding: 6rem 0;
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#hero .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#hero h2 {
+    color: var(--text-color); /* Override default header color for hero */
+    font-size: 3.5rem; /* Larger hero title */
+    margin-bottom: 1.5rem;
+}
+
+#hero p {
+    font-size: 1.3rem; /* Larger hero paragraph */
+    margin: 0 auto 2.5rem; /* Center horizontally with auto margins */
+    color: var(--text-color-secondary);
+    max-width: 700px; /* Constrain width for readability */
+    text-align: center; /* Ensure text is centered */
+}
+
+.btn {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: #fff; /* White text on blue button */
+    padding: 0.9rem 2rem; /* More padding */
+    text-decoration: none;
+    border-radius: 8px; /* More rounded */
+    font-weight: 600; /* Bolder text */
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px var(--blue-shadow-primary); /* Use CSS variable for shadow */
+}
+
+.btn:hover {
+    background-color: var(--primary-variant-color);
+    transform: translateY(-2px); /* Slight lift on hover */
+    box-shadow: 0 6px 20px var(--blue-shadow-hover); /* Use CSS variable for shadow */
+}
+
+/* Stela Engine Page Specifics */
+#engine-intro a:not(.btn) { /* Ensure only non-button links get this style */
+    color: var(--primary-color);
+    text-decoration: none; /* Remove underline by default */
+    border-bottom: 1px solid transparent; /* For hover effect */
+    transition: border-color 0.3s ease;
+}
+#engine-intro a:not(.btn):hover {
+    border-bottom-color: var(--primary-color);
+}
+
+#latest-commit-info {
+    background-color: var(--surface-color);
+    padding: 2rem; /* More padding */
+    border-radius: 12px; /* More rounded */
+    border: 1px solid var(--border-color);
+    margin-top: 2rem; /* More margin */
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+#latest-commit-info p {
+    margin-bottom: 0.8rem;
+    word-break: break-word;
+    color: var(--text-color-secondary);
+}
+#latest-commit-info p strong {
+    color: var(--text-color); /* Strong text within cards can be lighter */
+}
+#latest-commit-info .btn {
+    margin-top: 1.5rem;
+}
+#latest-commit-info h4 {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+}
+
+.error-message {
+    color: #ff6b6b; /* A red for errors */
+    background-color: rgba(255, 107, 107, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ff6b6b;
+}
+
+#engine-features ul {
+    list-style: none; /* Remove default list style */
+    padding-left: 0;
+}
+#engine-features li {
+    margin-bottom: 1rem; /* More spacing */
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--text-color-secondary);
+}
+#engine-features li::before { /* Custom bullet */
+    content: '✓'; /* Checkmark or other icon */
+    color: var(--primary-color);
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+#technical-details {
+    margin-top: 3rem;
+}
+
+#technical-details li,
+#engine-features li {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--text-color-secondary);
+}
+
+#technical-details li::before,
+#engine-features li::before {
+    content: '✓';
+    color: var(--primary-color);
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+#technical-details h4,
+#engine-features h4 {
+    margin-bottom: 2rem;
+    color: var(--text-color);
+}
+
+/* Footer */
+footer {
+    background-color: var(--bg-color); /* Match body background */
+    color: var(--text-color-secondary);
+    text-align: center;
+    padding: 3rem 0; /* More padding */
+    border-top: 1px solid var(--border-color);
+    font-size: 0.95rem;
+}
+
+footer p {
+    margin: 0.5rem 0;
+}
+
+/* Scroll Reveal Animations */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition-delay: 0.1s; /* Default small delay */
+}
+
+.scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Add staggered delay for elements within a revealed section if needed */
+.scroll-reveal.d-100.is-visible { transition-delay: 0.1s; }
+.scroll-reveal.d-200.is-visible { transition-delay: 0.2s; }
+.scroll-reveal.d-300.is-visible { transition-delay: 0.3s; }
+/* etc. Or apply directly in HTML: style="transition-delay: 0.Xs;" after .is-visible is added */
+
+/* Stela Engine Green Theme Overrides */
+body.stela-theme {
+    --primary-color: var(--stela-green-primary);
+    --primary-variant-color: var(--stela-green-variant);
+}
+
+body.stela-theme .btn {
+    background-color: var(--primary-color); /* Already uses var, so it's green */
+    box-shadow: 0 4px 15px var(--stela-green-shadow-primary); /* Green shadow */
+}
+body.stela-theme .btn:hover {
+    background-color: var(--primary-variant-color); /* Already uses var */
+    box-shadow: 0 6px 20px var(--stela-green-shadow-hover); /* Green shadow hover */
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px; /* Adjust base font for mobile */
+    }
+
+    .container {
+        padding: 0 15px;
+    }
+
+    header {
+        padding: 0.5rem 0;
+        height: 60px; /* Adjust header height for mobile */
+        --header-height: 60px;
+        backdrop-filter: blur(8px); /* Slightly less blur on mobile for performance */
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .logo-img {
+        height: 30px;
+    }
+    header h1 {
+        font-size: 1.4rem;
+    }
+
+    #nav-toggle {
+        display: flex; /* Use flex to center spans if needed, or just block */
+        flex-direction: column;
+        justify-content: center; /* Vertically center the spans if button taller */
+        align-items: center; /* Horizontally center the spans if button wider */
+        /* color: var(--text-color); Remove as spans handle color */
+        /* font-size: 1.8rem; Remove as not using font icon */
+    }
+
+    #main-nav {
+        display: none;
+        position: absolute;
+        top: var(--header-height); /* Position below header */
+        left: 0;
+        width: 100%;
+        background-color: var(--surface-color); /* Solid background for mobile nav */
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        padding-bottom: 10px; /* Add some padding at the bottom */
+    }
+    
+    #main-nav.active {
+        display: block;
+    }
+
+    #main-nav ul {
+        flex-direction: column;
+    }
+
+    #main-nav li {
+        margin: 0;
+        text-align: left; /* Align text left */
+        border-bottom: 1px solid var(--border-color);
+    }
+    #main-nav li:last-child {
+        border-bottom: none;
+    }
+
+    #main-nav a {
+        display: block;
+        padding: 0.9rem 1.5rem; /* More padding for tap targets */
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    h2 { font-size: 2.2rem; }
+    h3 { font-size: 1.8rem; }
+    h4 { font-size: 1.4rem; }
+
+    #hero {
+        padding: 4rem 0; /* Adjusted padding */
+        min-height: 60vh;
+    }
+    #hero h2 {
+        font-size: 2.5rem; /* Adjusted for mobile */
+    }
+    #hero p {
+        font-size: 1.1rem; /* Adjusted for mobile */
+    }
+
+    section {
+        padding: 3rem 0; /* Adjusted padding for mobile */
+    }
+    .btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    #latest-commit-info {
+        padding: 1.5rem;
+    }
+}

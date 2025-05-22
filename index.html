@@ -2,187 +2,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stela - Game Engine Interface</title>
-    <link rel="stylesheet" href="base-styles.css">
-    <link rel="stylesheet" href="button-dropdown-styles.css">
-    <link rel="stylesheet" href="panel-styles.css">
-    <link rel="stylesheet" href="tab-styles.css">
-    <link rel="stylesheet" href="viewport-styles.css">
-    <link rel="stylesheet" href="script-editor-styles.css">
-    <link rel="stylesheet" href="visual-script-editor-styles.css">
-    <link rel="stylesheet" href="properties-panel-styles.css">
-    <link rel="stylesheet" href="project-files-styles.css">
-    <link rel="stylesheet" href="console-styles.css">
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
+    <title>Century6 - Indie Game Development</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="assets/century6-logo.png">
 </head>
 <body>
     <header>
-        <div class="header-left">
-            <h1>Stela</h1>
-            <p>3D Environment Editor</p>
-        </div>
-        <div class="menu-bar">
-            <button id="play-game-btn">Play</button>
-            <button id="stop-game-btn" style="display:none;">Stop</button>
-            <div class="dropdown">
-                <button id="add-object-menu-btn" class="dropdown-btn">Add Object</button>
-                <div id="add-object-dropdown-content" class="dropdown-content">
-                    <a href="#" id="add-cube-btn">Cube</a>
-                    <a href="#" id="add-sphere-btn">Sphere</a>
-                    <a href="#" id="add-cylinder-btn">Cylinder</a>
-                </div>
-            </div>
+        <div class="container">
+            <a href="index.html" class="logo-link">
+                <h1>Century6</h1>
+            </a>
+            <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav id="main-nav">
+                <ul>
+                    <li><a href="index.html" class="active">Home</a></li>
+                    <li><a href="stela-engine.html">Stela Engine</a></li>
+                    <!-- <li><a href="#about">About</a></li> -->
+                    <!-- <li><a href="#contact">Contact</a></li> -->
+                </ul>
+            </nav>
         </div>
     </header>
 
-    <div id="app-main-content">
-        <div id="left-panel">
-            <h3>Hierarchy</h3>
-            <div id="object-list-container">
-                 <div id="object-list"></div>
+    <main>
+        <section id="hero">
+            <div class="container">
+                <h2 class="scroll-reveal">Innovative Game Development</h2>
+                <p class="scroll-reveal d-100">Century6 is an indie game development company passionate about creating unique and engaging gaming experiences. We are currently focused on building the open-source <span class="highlight">Stela Engine</span>.</p>
+                <a href="stela-engine.html" class="btn scroll-reveal d-200">Learn about Stela Engine</a>
             </div>
-        </div>
+        </section>
 
-        <div id="center-column">
-            <div id="center-tabs">
-                <button id="scene-tab-btn" class="tab-btn active">Scene</button>
-                <button id="script-editor-tab-btn" class="tab-btn">Script: <span id="current-script-name-tab">Untitled</span></button>
-                <button id="visual-script-editor-tab-btn" class="tab-btn">Visual Script: <span id="current-visual-script-name-tab">Untitled</span></button>
+        <section id="about-short" class="scroll-reveal">
+        </section>
+         <section id="vision" class="scroll-reveal">
+            <div class="container">
+                <h3 class="scroll-reveal">Our Vision</h3>
+                <p class="scroll-reveal d-100">To empower creators with tools that are both powerful and accessible, fostering a new generation of interactive experiences. We believe in the potential of indie developers to shape the future of gaming.</p>
+                <p class="scroll-reveal d-200">Join us on our journey as we build the <span class="highlight">Stela Engine</span> and explore new frontiers in game design.</p>
             </div>
-            <div id="center-content">
-                <div id="scene-view-content" class="tab-content active">
-                    <div id="viewer-container"></div>
-                </div>
-                <div id="script-editor-content" class="tab-content">
-                    <textarea id="script-input" rows="10" cols="50" placeholder="Example:
-// Script for the attached object
-if (key.SPACE) {
-  object.position.y + 0.1;
-}
+        </section>
+    </main>
 
-// Affect another object
-if (object.position.y > 5) {
-  outsider.otherCube.scale.x + 0.01;
-}
-
-// Control game camera
-if (game.isPlaying) {
-  game.camera.fov + 0.01;
-}
-
-print('My object is ' + object.name);"></textarea>
-                    <div id="script-controls">
-                        <button id="run-update-btn">Recompile Open Script</button>
-                        <button id="run-once-btn">Run For Selected</button>
-                        <button id="clear-active-script-btn">Clear Editor</button>
-                        <button id="save-script-btn">Save Script</button>
-                    </div>
-                </div>
-                <div id="visual-script-editor-content" class="tab-content">
-                    <div id="visual-script-toolbar">
-                        <button id="vs-add-node-btn">Add Node</button>
-                        <select id="vs-node-type-select">
-                            <option value="event-start">Event: Start</option>
-                            <option value="event-update">Event: Update</option>
-                            <option value="event-key-press">Event: Key Press</option>
-                            <option value="action-log">Action: Log Message</option>
-                            <option value="action-branch">Action: Branch (If)</option>
-                            <option value="value-number">Value: Number</option>
-                            <option value="value-string">Value: String</option>
-                        </select>
-                        <button id="vs-save-as-text-btn">Save as Text Script</button>
-                    </div>
-                    <div id="visual-script-graph-container">
-                        <svg id="visual-script-svg-layer"></svg>
-                        <div id="visual-script-nodes-container">
-                            <!-- Nodes will be added here by JS -->
-                        </div>
-                        <div id="vs-marquee-selection-rect" style="display: none;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="right-panel">
-            <div id="properties-panel">
-                <h3>Properties</h3>
-                <div id="selected-object-indicator">No object selected.</div>
-                <div class="property-group" id="object-name-group" style="display: none;">
-                    <label for="prop-name">Name:</label>
-                    <input type="text" id="prop-name">
-                </div>
-                <div class="property-group" id="object-parenting-group" style="display: none;">
-                    <h4>Parent</h4>
-                    <select id="prop-parent-select"></select>
-                </div>
-                <div class="property-group" id="object-transform-group" style="display: none;">
-                    <h4>Position (Local)</h4>
-                    <div class="vector3-input">
-                        <label for="prop-pos-x">X:</label><input type="number" id="prop-pos-x" step="0.1">
-                        <label for="prop-pos-y">Y:</label><input type="number" id="prop-pos-y" step="0.1">
-                        <label for="prop-pos-z">Z:</label><input type="number" id="prop-pos-z" step="0.1">
-                    </div>
-                    <h4>Rotation (Local, Degrees)</h4>
-                    <div class="vector3-input">
-                        <label for="prop-rot-x">X:</label><input type="number" id="prop-rot-x" step="1">
-                        <label for="prop-rot-y">Y:</label><input type="number" id="prop-rot-y" step="1">
-                        <label for="prop-rot-z">Z:</label><input type="number" id="prop-rot-z" step="1">
-                    </div>
-                    <h4>Scale (Local)</h4>
-                    <div class="vector3-input">
-                        <label for="prop-scale-x">X:</label><input type="number" id="prop-scale-x" step="0.1" min="0.01">
-                        <label for="prop-scale-y">Y:</label><input type="number" id="prop-scale-y" step="0.1" min="0.01">
-                        <label for="prop-scale-z">Z:</label><input type="number" id="prop-scale-z" step="0.1" min="0.01">
-                    </div>
-                </div>
-                <div class="property-group" id="object-camera-group" style="display: none;">
-                    <h4>Camera Attachment</h4>
-                    <div id="camera-attachment-status">This object is not the active camera.</div>
-                    <button id="set-active-camera-btn">Set as Active Game Camera</button>
-                    <button id="clear-active-camera-btn" style="display:none;">Clear Active Game Camera</button>
-                </div>
-                <div class="property-group" id="object-scripts-group" style="display: none;">
-                    <h4>Script Components</h4>
-                    <div id="script-component-list">
-                        <!-- Attached scripts will be listed here -->
-                    </div>
-                    <div id="add-script-component-controls">
-                        <select id="available-scripts-dropdown"></select>
-                        <button id="add-script-component-btn">Add Script</button>
-                    </div>
-                </div>
-                 <button id="delete-object-btn" style="display:none;">Delete Selected Object</button>
-            </div>
-        </div>
-    </div>
-
-    <footer id="bottom-panel">
-        <div id="bottom-tabs">
-            <button id="project-tab-btn" class="tab-btn active">Project</button>
-            <button id="console-tab-btn" class="tab-btn">Console</button>
-        </div>
-        <div id="bottom-content">
-            <div id="project-content" class="tab-content active">
-                <div id="script-file-list-header">
-                    <h4>Scripts</h4>
-                    <button id="create-new-script-btn">New Script</button>
-                </div>
-                <div id="script-file-list"></div>
-            </div>
-            <div id="console-content" class="tab-content">
-                 <div id="script-output-label">Script Output:</div>
-                 <div id="script-output"></div>
-            </div>
-        </div>
-    </footer>
-
-    <script type="module" src="main.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "main": "./js/main.js",
+        "config": "./js/config.js"
+      }
+    }
+    </script>
+    <script type="module">
+        import { initCommon } from 'main';
+        initCommon();
+    </script>
 </body>
 </html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stela Engine - Century6</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="assets/century6-logo.png">
+</head>
+<body class="stela-theme">
+    <header>
+        <div class="container">
+            <a href="index.html" class="logo-link">
+                <h1>Century6</h1>
+            </a>
+            <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav id="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="stela-engine.html" class="active">Stela Engine</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="engine-intro" class="scroll-reveal">
+            <div class="container">
+                <h2 class="scroll-reveal">Stela Engine</h2>
+                <p class="scroll-reveal d-100">Stela Engine is our flagship project – a modern, <span class="highlight">open-source</span> game engine with a focus on visual scripting and intuitive game development. Built with Three.js for 3D rendering, it offers a flexible and powerful environment for creating interactive experiences.</p>
+                <p class="scroll-reveal d-200"><strong>License:</strong> Stela Engine is proudly licensed under the <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a>.</p>
+                <a href="https://github.com/C6Dev/StelaEngine" target="_blank" rel="noopener noreferrer" class="btn scroll-reveal d-300">View on GitHub</a>
+            </div>
+        </section>
+
+        <section id="latest-commit">
+            <div class="container">
+                <h3 class="scroll-reveal">Development Progress</h3>
+                <div id="latest-commit-info">
+                    <p>Loading latest commit information...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="engine-features" class="scroll-reveal">
+            <div class="container">
+                <h4 class="scroll-reveal">Current Features</h4>
+                <ul class="scroll-reveal d-100">
+                    <li>Modern Three.js-based 3D rendering engine</li>
+                    <li>Visual scripting system with node-based programming</li>
+                    <li>Traditional text-based script editor with live compilation</li>
+                    <li>Intuitive object hierarchy and properties panel</li>
+                    <li>Real-time game preview with play/stop controls</li>
+                    <li>Support for basic 3D primitives (cube, sphere, cylinder)</li>
+                    <li>Transform controls for object manipulation</li>
+                    <li>Object naming and management system</li>
+                    <li>Event-driven scripting with Start and Update events</li>
+                    <li>Built-in console for debugging and logging</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="technical-details" class="scroll-reveal">
+            <div class="container">
+                <h4 class="scroll-reveal">Technical Specifications</h4>
+                <ul class="scroll-reveal d-100">
+                    <li>Built with modern JavaScript/ES6+</li>
+                    <li>Three.js for 3D graphics rendering</li>
+                    <li>Modular architecture with separate managers for UI, objects, and scripts</li>
+                    <li>File-based project system for saving and loading scripts</li>
+                    <li>Custom visual scripting graph implementation</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "main": "./js/main.js",
+        "config": "./js/config.js"
+      }
+    }
+    </script>
+    <script type="module">
+        import { initCommon, initStelaEnginePage } from 'main';
+        initCommon();
+        initStelaEnginePage();
+    </script>
+</body>
+</html>
