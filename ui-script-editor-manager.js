@@ -12,7 +12,7 @@ function updateTextScriptEditorTabName(name) {
     DOM.currentScriptNameTabSpan.textContent = name || 'Untitled';
 }
 
-function loadTextScriptIntoEditor(name, content, isSaved = true) {
+export function loadTextScriptIntoEditor(name, content, isSaved = true) {
     DOM.scriptInput.value = content;
     currentTextScriptFileNameInEditor = name; 
     if (isSaved) { 
@@ -22,7 +22,7 @@ function loadTextScriptIntoEditor(name, content, isSaved = true) {
     TabManager.switchCenterTab('script');
 }
 
-function clearTextEditorToUntitled() {
+export function clearTextEditorToUntitled() {
     DOM.scriptInput.value = '// New unsaved script\n';
     currentTextScriptFileNameInEditor = null;
     FileManager.setCurrentOpenScriptName(null);
@@ -35,29 +35,25 @@ function handleSaveCurrentScript() {
     if (activeTab === 'script') { 
         let nameToSave = currentTextScriptFileNameInEditor || FileManager.getCurrentOpenScriptName();
         if (!nameToSave) { 
-            nameToSave = prompt("Enter text script name (e.g., MyScript.stela):", FileManager.getUniqueScriptName("MyScript"));
+            const baseNameSuggestion = FileManager.getUniqueScriptName("MyScript").replace(/\.stela$/, "");
+            nameToSave = prompt("Enter text script name (e.g., MyScript):", baseNameSuggestion);
             if (!nameToSave || !nameToSave.trim()) {
                 ScriptEngine.customConsole.error("Save cancelled or invalid name for text script.");
                 return;
             }
         }
-        
         const content = DOM.scriptInput.value;
         if (FileManager.saveScript(nameToSave, content)) { 
-            currentTextScriptFileNameInEditor = nameToSave.endsWith(".stela") ? nameToSave : nameToSave + ".stela";
-            updateTextScriptEditorTabName(currentTextScriptFileNameInEditor); 
-            ScriptEngine.compileScript(currentTextScriptFileNameInEditor, content); 
+            currentTextScriptFileNameInEditor = nameToSave.endsWith(".stela") ? nameToSave : nameToSave + ".stela"; 
+            const finalName = FileManager.getCurrentOpenScriptName(); 
+            updateTextScriptEditorTabName(finalName); 
+            ScriptEngine.compileScript(finalName, content); 
         }
 
     } else if (activeTab === 'visual-script') { 
         const savedInfo = VisualScriptEditorManager.saveVisualScript(); 
         if (savedInfo && savedInfo.name) {
             ScriptEngine.customConsole.log(`Visual script "${savedInfo.name}" saved successfully.`);
-            // FileManager hooks (called within saveVisualScript indirectly via FileManager.saveVisualScript)
-            // will refresh project file lists.
-            // VisualScriptEditorManager updates its own tab.
-        } else if (savedInfo === null) { // Explicit null might mean user cancelled prompt or other save failure handled in VS manager
-             // Error/cancel message would have been logged by VisualScriptEditorManager or FileManager
         }
     }
 }

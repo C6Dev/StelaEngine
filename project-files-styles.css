@@ -9,22 +9,23 @@
     align-items: center;
     margin-bottom: 6px; 
     padding-bottom: 4px; 
-    border-bottom: 1px solid #3F3F42; 
+    border-bottom: 1px solid #3A3A3A; /* Darker separator */
 }
 
 #script-file-list-header h4 {
     margin: 0;
     font-size: 0.9em; 
-    color: #E0E0E0;
+    color: #D0D0D0;
+    font-weight: 500; /* Less bold */
 }
 
 #create-new-script-btn {
-    background-color: #3C3C3C; 
-    color: #CCCCCC;
-    border: 1px solid #303030;
-    padding: 3px 6px; 
+    background-color: #383838; 
+    color: #DEDEDE;
+    border: 1px solid #202020;
+    padding: 4px 8px; /* Adjusted padding */
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: 3px; /* Softer radius */
     font-size: 0.75em;
 }
 
@@ -36,18 +37,18 @@
     flex-grow: 1;
     overflow-y: auto;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    font-size: 0.8em; 
+    font-size: 0.85em; /* Slightly larger text */
 }
 
 #script-file-list .script-file-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 3px 5px; 
+    padding: 4px 6px; /* Adjusted padding */
     cursor: default; 
     border-radius: 2px;
     margin-bottom: 1px;
-    color: #AAAAAA; 
+    color: #A0A0A0; 
 }
 
 #script-file-list .script-file-item span:first-of-type { 
@@ -61,16 +62,16 @@
 }
 
 #script-file-list .script-file-item:hover {
-    background-color: #2A2A2D; 
+    background-color: #2A2A2A; 
 }
 
 #script-file-list .script-file-item span:not(.script-type-icon):hover {
-    color: #FFFFFF; 
+    color: #DEDEDE; 
     text-decoration: none; 
 }
 
 #script-file-list .script-file-item.selected-script {
-    background-color: #0E639C; 
+    background-color: #0D99FF; /* New Accent Blue */
     color: white;
 }
 
@@ -89,22 +90,22 @@
 
 .script-item-controls button {
     margin-left: 6px; 
-    padding: 2px 5px; 
-    font-size: 0.75em;
-    background-color: #4A4A4A; 
-    color: #CCCCCC;
-    border: 1px solid #333333;
+    padding: 3px 6px; /* Adjusted for small buttons */
+    font-size: 0.8em; /* Adjusted for small buttons */
+    background-color: #383838; 
+    color: #DEDEDE;
+    border: 1px solid #202020;
     cursor: pointer;
     border-radius: 2px;
     line-height: 1; 
 }
 
 .script-item-controls button:hover {
-    background-color: #5A5A5A;
-    border-color: #444444;
+    background-color: #4A4A4A;
+    border-color: #2A2A2A;
 }
 
 .script-item-controls button.delete-script-btn:hover {
-    background-color: #A12622; 
+    background-color: #C62828; /* Consistent red */
     color: white;
 }

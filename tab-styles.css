@@ -1,7 +1,7 @@
 #center-tabs, #bottom-tabs {
     display: flex;
-    background-color: #2D2D2D; 
-    border-bottom: 1px solid #000000;
+    background-color: #2E2E2E; 
+    border-bottom: 1px solid #0F0F0F;
     flex-shrink: 0;
     height: 30px; 
 }
@@ -10,10 +10,10 @@
     padding: 0 12px; 
     line-height: 30px; 
     cursor: pointer;
-    background-color: #2D2D2D;
+    background-color: #2E2E2E;
     border: none;
-    border-right: 1px solid #000000;
-    color: #AAAAAA; 
+    border-right: 1px solid #0F0F0F;
+    color: #A0A0A0; 
     font-size: 0.85em;
     transition: background-color 0.1s ease, color 0.1s ease;
 }
@@ -28,7 +28,7 @@
 }
 .tab-btn:hover:not(.active) {
     background-color: #383838;
-    color: #DDDDDD;
+    color: #DEDEDE;
 }
 .tab-btn.active:hover {
     background-color: #1E1E1E; 
@@ -48,7 +48,7 @@
 #scene-view-content, 
 #script-editor-content, 
 #visual-script-editor-content {
-    background-color: #1E1E1E; 
+    background-color: #1A1A1A; 
 }
 
 #bottom-tabs .tab-btn.active {
@@ -57,5 +57,5 @@
 }
 
 #bottom-tabs {
-    background-color: #2D2D2D;
+    background-color: #2E2E2E;
 }

@@ -1,42 +1,52 @@
 .menu-bar {
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .menu-bar button, .dropdown-btn {
-    background-color: #3C3C3C;
-    color: #CCCCCC;
-    border: 1px solid #303030;
-    padding: 5px 10px;
+    background-color: #383838;
+    color: #DEDEDE;
+    border: 1px solid #202020;
+    padding: 6px 12px;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: 3px;
     font-size: 0.85em;
     transition: background-color 0.1s ease, border-color 0.1s ease;
 }
 
 .menu-bar button#play-game-btn {
-    background-color: #28a745;
-    border-color: #1e7e34;
+    background-color: #10A37F;
+    border-color: #0D8265;
 }
 .menu-bar button#play-game-btn:hover {
-    background-color: #218838;
+    background-color: #0D8265;
 }
 .menu-bar button#stop-game-btn {
-    background-color: #dc3545;
-    border-color: #b02a37;
+    background-color: #E53935;
+    border-color: #C62828;
 }
 .menu-bar button#stop-game-btn:hover {
-    background-color: #c82333;
+    background-color: #C62828;
+}
+
+.menu-bar button#eject-camera-btn {
+    background-color: #FFB300;
+    border-color: #E6A100;
+    color: #1A1A1A;
+}
+.menu-bar button#eject-camera-btn:hover {
+    background-color: #E6A100;
 }
 
 .menu-bar button:hover, .dropdown-btn:hover {
     background-color: #4A4A4A;
-    border-color: #404040;
+    border-color: #2A2A2A;
 }
 .menu-bar button:disabled, .dropdown-btn:disabled {
-    background-color: #303030 !important;
-    color: #777777 !important;
-    border-color: #252525 !important;
+    background-color: #2A2A2A !important;
+    color: #666666 !important;
+    border-color: #181818 !important;
     cursor: not-allowed;
 }
 
@@ -49,17 +59,26 @@
 .dropdown-content {
     display: none;
     position: absolute;
-    background-color: #252526;
+    background-color: #2A2A2A;
     min-width: 160px;
-    box-shadow: 0px 5px 12px 0px rgba(0,0,0,0.5);
+    box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.6);
     z-index: 1001;
-    border-radius: 2px;
-    border: 1px solid #000000;
-    right: 0;
+    border-radius: 3px;
+    border: 1px solid #0F0F0F;
+}
+
+#add-object-dropdown-content {
+    right: 0; 
+    left: auto;
+}
+
+.dropdown-content:not(#add-object-dropdown-content) {
+    left: 0;
+    right: auto;
 }
 
 .dropdown-content a {
-    color: #CCCCCC;
+    color: #C0C0C0;
     padding: 8px 12px;
     text-decoration: none;
     display: block;
@@ -67,6 +86,104 @@
 }
 
 .dropdown-content a:hover {
-    background-color: #0E639C;
+    background-color: #0D99FF;
+    color: #FFFFFF;
+}
+
+/* Gizmo Controls Styles */
+.gizmo-controls {
+    display: flex;
+    gap: 2px; 
+    margin-left: 10px; 
+    background-color: #202020; 
+    border-radius: 3px;
+    padding: 2px;
+    border: 1px solid #0F0F0F;
+}
+
+.gizmo-btn {
+    background-color: #383838;
+    color: #DEDEDE;
+    border: 1px solid #2A2A2A; 
+    padding: 4px 8px; 
+    cursor: pointer;
+    font-size: 0.8em; 
+    line-height: 1;
+    min-width: 28px; 
+    text-align: center;
+    border-radius: 2px; 
+}
+
+.gizmo-btn:hover {
+    background-color: #4A4A4A;
+    border-color: #333333;
+}
+
+.gizmo-btn.active-gizmo-btn {
+    background-color: #0D99FF; 
+    color: #FFFFFF;
+    border-color: #007ACC;
+}
+
+.gizmo-btn:disabled {
+    background-color: #2A2A2A !important;
+    color: #666666 !important;
+    border-color: #181818 !important;
+    cursor: not-allowed;
+}
+
+/* Modal Styles for Load Project */
+.modal {
+    position: fixed;
+    z-index: 2000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.modal-content {
+    background-color: #2E2E2E;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #0F0F0F;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 400px; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    color: #DEDEDE;
+}
+
+.close-button {
+    color: #AAAAAA;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #FFFFFF;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#load-project-list .project-load-item {
+    padding: 8px 10px;
+    margin: 5px 0;
+    background-color: #383838;
+    border: 1px solid #202020;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+#load-project-list .project-load-item:hover {
+    background-color: #0D99FF;
     color: #FFFFFF;
 }

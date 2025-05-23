@@ -5,15 +5,28 @@ export const rightPanel = document.getElementById('right-panel');
 export const bottomPanel = document.getElementById('bottom-panel');
 
 // Header Elements
+export const currentProjectDisplay = document.getElementById('current-project-display');
+export const fileMenuBtn = document.getElementById('file-menu-btn');
+export const fileDropdownContent = document.getElementById('file-dropdown-content');
+export const newProjectBtn = document.getElementById('new-project-btn');
+export const saveProjectBtn = document.getElementById('save-project-btn');
+export const saveProjectAsBtn = document.getElementById('save-project-as-btn');
+export const loadProjectBtn = document.getElementById('load-project-btn');
 export const addObjectMenuBtn = document.getElementById('add-object-menu-btn');
 export const addObjectDropdownContent = document.getElementById('add-object-dropdown-content');
 export const addCubeBtn = document.getElementById('add-cube-btn');
 export const addSphereBtn = document.getElementById('add-sphere-btn');
 export const addCylinderBtn = document.getElementById('add-cylinder-btn');
 
+// Gizmo Controls
+export const gizmoTranslateBtn = document.getElementById('gizmo-translate-btn');
+export const gizmoRotateBtn = document.getElementById('gizmo-rotate-btn');
+export const gizmoScaleBtn = document.getElementById('gizmo-scale-btn');
+
 // Game Controls
 export const playGameBtn = document.getElementById('play-game-btn');
 export const stopGameBtn = document.getElementById('stop-game-btn');
+export const ejectCameraBtn = document.getElementById('eject-camera-btn');
 
 // Left Panel (Hierarchy)
 export const objectListContainer = document.getElementById('object-list-container'); 
@@ -26,7 +39,6 @@ export const scriptEditorTabBtn = document.getElementById('script-editor-tab-btn
 export const currentScriptNameTabSpan = document.getElementById('current-script-name-tab');
 export const visualScriptEditorTabBtn = document.getElementById('visual-script-editor-tab-btn'); 
 export const currentVisualScriptNameTabSpan = document.getElementById('current-visual-script-name-tab'); 
-
 
 export const centerContent = document.getElementById('center-content');
 export const sceneViewContent = document.getElementById('scene-view-content');
@@ -77,6 +89,10 @@ export const cameraAttachmentStatusDiv = document.getElementById('camera-attachm
 export const setActiveCameraBtn = document.getElementById('set-active-camera-btn');
 export const clearActiveCameraBtn = document.getElementById('clear-active-camera-btn');
 
+// Scene Settings in Properties Panel
+export const sceneSettingsGroup = document.getElementById('scene-settings-group');
+export const propBgColorInput = document.getElementById('prop-bg-color');
+
 // Script Components in Properties Panel
 export const objectScriptsGroup = document.getElementById('object-scripts-group');
 export const scriptComponentListDiv = document.getElementById('script-component-list');
@@ -97,3 +113,12 @@ export const scriptFileListDiv = document.getElementById('script-file-list');
 export const consoleContent = document.getElementById('console-content');
 export const scriptOutputLabel = document.getElementById('script-output-label'); 
 export const scriptOutputDiv = document.getElementById('script-output');
+
+// Load Project Modal
+export const loadProjectModal = document.getElementById('load-project-modal');
+export const closeLoadProjectModalBtn = document.getElementById('close-load-project-modal');
+export const loadProjectListDiv = document.getElementById('load-project-list');
+export const noProjectsMessage = document.getElementById('no-projects-message');
+
+// Hidden file input for project loading
+export const loadProjectFileInput = document.getElementById('load-project-file-input');

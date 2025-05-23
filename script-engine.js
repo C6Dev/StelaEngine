@@ -185,6 +185,11 @@ export function clearOutputMessages() {
     }
 }
 
+export function clearCompiledScripts() {
+    compiledScripts = {};
+    // customConsole.log("Compiled script cache cleared."); // Optional: for debugging
+}
+
 export function executeComponentScripts() { // Renamed from executeActiveScriptInLoop
     const allObjects = getSceneObjects();
     const gameContext = getGameContextFunc();

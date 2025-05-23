@@ -5,15 +5,27 @@ import * as ScriptEngine from './script-engine.js';
 import * as DOM from './dom-elements.js';
 import * as THREE from 'three'; 
 import * as GameManager from './game-manager.js';
-import * as VisualScriptEditorManager from './ui-visual-script-editor-manager.js'; // For accessing active graph
+import * as VisualScriptEditorManager from './ui-visual-script-editor-manager.js'; 
+import * as FileManager from './file-manager.js'; 
+import * as ProjectManager from './project-manager.js'; 
 
 const keyStates = {};
 
-function init() {
+async function init() { 
     ThreeScene.initThreeScene();
     GameManager.initGameManager(); 
+    
+    // Initialize FileManager first - it no longer directly interacts with localStorage for projects
+    FileManager.initFileManager({ 
+        refreshScriptLists: UIManager.populateScriptFileList, // Pass the UIManager function directly
+        clearEditorForDeletedScript: (name, type) => { 
+            if (type === 'text') UIManager.handleScriptDeletedInEditor(name, 'text'); // UIManager will delegate
+            else if (type === 'visual') UIManager.handleScriptDeletedInEditor(name, 'visual'); // UIManager will delegate
+        },
+    });
 
-    UIManager.initUIManager();
+    // UIManager initializes its sub-modules, including UIProjectFilesManager which needs FileManager
+    UIManager.initUIManager(); 
 
     ObjectManager.initObjectManager({
         populatePropertiesPanel: UIManager.populatePropertiesPanel,
@@ -23,12 +35,20 @@ function init() {
                 const target = objectName ? ObjectManager.getSceneObjects()[objectName] : null;
                 ThreeScene.setCameraTarget(target);
             }
+        },
+        onObjectTransformedByGizmo: () => {
+            UIManager.populatePropertiesPanel();
+            ProjectManager.markProjectDirty();
         }
     });
 
     ScriptEngine.initScriptEngine(keyStates, GameManager.getGameContext); 
 
-    ObjectManager.addSceneObject('cube');
+    // Initialize ProjectManager, which now loads an empty initial project state
+    // Pass the populateScriptFileList from UIManager to ProjectManager
+    await ProjectManager.initProjectManager({
+        populateScriptFileList: UIManager.populateScriptFileList 
+    }); 
 
     setupKeyboardListeners();
     setupViewerMouseListener();
@@ -40,11 +60,21 @@ function init() {
 function setupGameControls() {
     DOM.playGameBtn.addEventListener('click', GameManager.startGame);
     DOM.stopGameBtn.addEventListener('click', GameManager.stopGame);
+    DOM.ejectCameraBtn.addEventListener('click', () => {
+        if (GameManager.getIsPlaying() && !GameManager.getIsCameraEjected()) {
+            GameManager.ejectCamera();
+        }
+    });
 }
 
 function setupViewerMouseListener() {
     DOM.viewerContainer.addEventListener('mousedown', (event) => {
         if (GameManager.getIsPlaying()) return; 
+
+        const transformControls = ThreeScene.getTransformControls();
+        if (transformControls && transformControls.axis !== null && transformControls.dragging) { 
+            return; 
+        }
 
         event.preventDefault();
 
@@ -75,10 +105,12 @@ function setupViewerMouseListener() {
             
             if (sceneObjs[clickedObject.name]) { 
                  ObjectManager.setSelectedObjectAndUpdateUI(clickedObject);
+                 ProjectManager.markProjectDirty(); // Selecting an object could be considered a change
             } else {
                 const parentInScene = findParentInSceneObjects(clickedObject, sceneObjs, ThreeScene.getScene());
                 if (parentInScene) {
                     ObjectManager.setSelectedObjectAndUpdateUI(parentInScene);
+                    ProjectManager.markProjectDirty();
                 } else {
                     ObjectManager.setSelectedObjectAndUpdateUI(null);
                 }
@@ -102,27 +134,39 @@ function findParentInSceneObjects(object, sceneObjs, scene) {
 
 function setupKeyboardListeners() {
     window.addEventListener('keydown', (event) => {
-        if (event.target.tagName === 'TEXTAREA' || (event.target.tagName === 'INPUT' && !GameManager.getIsPlaying())) {
-            if (event.key === 'Enter' && event.target.closest('#properties-panel')) {
+        // Prevent keyboard shortcuts if an input/textarea is focused, unless it's a global save (Ctrl+S)
+        const isInputFocused = event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT';
+        if (isInputFocused && !( (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') ) {
+             if (event.key === 'Enter' && event.target.closest('#properties-panel')) {
                 event.preventDefault(); 
-            } else {
-                if (!(event.ctrlKey && event.key.toLowerCase() === 's')) {
-                    return; 
-                }
+                event.target.blur(); // Deselect input on enter
             }
-        }
-        keyStates[event.key.toUpperCase()] = true;
-
-        if (event.ctrlKey && event.key.toLowerCase() === 's') {
-            event.preventDefault();
-            if (DOM.scriptEditorContent.classList.contains('active')) {
-                DOM.saveScriptBtn.click();
-            }
+            return;
         }
         
-        if (event.key === 'Delete' && !(event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT')) {
+        keyStates[event.key.toUpperCase()] = true;
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+            event.preventDefault();
+            DOM.saveProjectBtn.click(); 
+        }
+        
+        if (event.key === 'Delete' && !isInputFocused) {
             if (ObjectManager.getSelectedObject() && !GameManager.getIsPlaying()) { 
                 DOM.deleteObjectBtn.click(); 
+            }
+        }
+
+        if (!isInputFocused && !GameManager.getIsPlaying()) { // Gizmo shortcuts only if not playing and not in input
+            if (event.key.toLowerCase() === 'w') {
+                event.preventDefault();
+                DOM.gizmoTranslateBtn.click();
+            } else if (event.key.toLowerCase() === 'e') { 
+                event.preventDefault();
+                DOM.gizmoRotateBtn.click();
+            } else if (event.key.toLowerCase() === 'r') { 
+                event.preventDefault();
+                DOM.gizmoScaleBtn.click();
             }
         }
 
@@ -136,23 +180,27 @@ function animate() {
     requestAnimationFrame(animate);
 
     const isPlaying = GameManager.getIsPlaying();
-    const gameContext = GameManager.getGameContext(); // Get context once
+    const gameContext = GameManager.getGameContext(); 
+    // const currentProjectName = ProjectManager.getCurrentProjectName(); // Not directly used in animate loop like this
 
-    if (isPlaying) {
-        ScriptEngine.executeComponentScripts(); // Text scripts
+    if (isPlaying) { 
+        ScriptEngine.executeComponentScripts(); // Project context is implicit via FileManager now
 
-        // Execute the active visual script from the editor
         const activeVSGraph = VisualScriptEditorManager.getActiveVisualScriptGraph();
-        if (activeVSGraph) {
+        const currentOpenVSFileName = FileManager.getCurrentOpenVisualScriptName();
+        
+        // Check if the open visual script exists in the current project's loaded scripts
+        if (activeVSGraph && currentOpenVSFileName && FileManager.visualScriptExists(currentOpenVSFileName)) { 
             activeVSGraph.setContext(
-                ObjectManager.getSelectedObject(), // Contextual 'object' for VS is the selected one (can be null)
+                ObjectManager.getSelectedObject(), 
                 ObjectManager.getSceneObjects(), 
                 keyStates, 
-                gameContext, // Contains isFirstFrame
+                gameContext, 
                 ScriptEngine.customConsole
             );
-            activeVSGraph.executeEvent('event-start'); // VS Execution Manager internally checks gameContext.isFirstFrame
-            activeVSGraph.executeEvent('event-update'); // Runs if game is playing
+            activeVSGraph.executeEvent('event-start'); 
+            activeVSGraph.executeEvent('event-update'); 
+            activeVSGraph.executeEvent('event-key-input'); 
         }
         
         if (GameManager.isFirstPlayFrameTrue()) { 

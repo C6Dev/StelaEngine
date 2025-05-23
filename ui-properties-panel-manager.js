@@ -3,7 +3,7 @@ import * as DOM from './dom-elements.js';
 import * as ObjectManager from './object-manager.js';
 import * as ScriptComponentsManager from './ui-script-components-manager.js';
 import * as GameManager from './game-manager.js';
-import { getScene as getThreeSceneInstance } from './three-scene.js';
+import { getScene as getThreeSceneInstance, setBackgroundColor } from './three-scene.js'; // Added setBackgroundColor
 
 function getPotentialParents(selectedObj) {
     const allObjects = ObjectManager.getSceneObjects();
@@ -39,6 +39,7 @@ export function populatePropertiesPanel() {
         DOM.objectCameraGroup.style.display = 'block'; 
         DOM.objectScriptsGroup.style.display = 'block'; 
         DOM.deleteObjectBtn.style.display = 'block';
+        DOM.sceneSettingsGroup.style.display = 'none'; // Hide scene settings when object is selected
 
         DOM.propNameInput.value = selectedObject.name;
 
@@ -101,6 +102,7 @@ export function populatePropertiesPanel() {
         DOM.objectCameraGroup.style.display = 'none'; 
         DOM.objectScriptsGroup.style.display = 'none'; 
         DOM.deleteObjectBtn.style.display = 'none';
+        DOM.sceneSettingsGroup.style.display = 'block'; // Show scene settings when no object is selected
     }
 
     // Disable inputs if playing
@@ -110,14 +112,15 @@ export function populatePropertiesPanel() {
         DOM.propRotXInput, DOM.propRotYInput, DOM.propRotZInput,
         DOM.propScaleXInput, DOM.propScaleYInput, DOM.propScaleZInput,
         DOM.availableScriptsDropdown, DOM.addScriptComponentBtn, DOM.deleteObjectBtn,
-        DOM.setActiveCameraBtn, DOM.clearActiveCameraBtn
+        DOM.setActiveCameraBtn, DOM.clearActiveCameraBtn,
+        DOM.propBgColorInput // Add new color input to disable list
     ];
     const removeScriptBtns = DOM.scriptComponentListDiv.querySelectorAll('.remove-script-component-btn');
     
     allPropInputs.forEach(input => input.disabled = isPlaying);
     removeScriptBtns.forEach(btn => btn.disabled = isPlaying);
 
-    [DOM.objectNameGroup, DOM.objectParentingGroup, DOM.objectTransformGroup, DOM.objectCameraGroup, DOM.objectScriptsGroup].forEach(group => {
+    [DOM.objectNameGroup, DOM.objectParentingGroup, DOM.objectTransformGroup, DOM.objectCameraGroup, DOM.objectScriptsGroup, DOM.sceneSettingsGroup].forEach(group => {
         isPlaying ? group.classList.add('disabled') : group.classList.remove('disabled');
     });
 }
@@ -197,6 +200,11 @@ function setupPropertiesPanelListeners() {
     DOM.clearActiveCameraBtn.addEventListener('click', () => {
         if (GameManager.getIsPlaying()) return;
         ObjectManager.setActiveCameraObjectName(null);
+    });
+
+    DOM.propBgColorInput.addEventListener('input', (event) => { // 'input' for live update on color pickers
+        if (GameManager.getIsPlaying()) return;
+        setBackgroundColor(event.target.value);
     });
 }
 

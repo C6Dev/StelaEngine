@@ -1,16 +1,21 @@
-// Stela Script File Manager (using localStorage)
-import * as ScriptEngine from './script-engine.js'; // Import ScriptEngine
+// Stela File Manager (project-aware, using local files via ProjectManager)
+import * as ScriptEngine from './script-engine.js';
+import * as ProjectManager from './project-manager.js'; // For marking dirty
 
-const SCRIPT_PREFIX = 'stela_script_';
-const VS_SCRIPT_PREFIX = 'stela_vs_script_'; // New prefix for visual scripts
+let currentProjectNameForFileManager = null; // Renamed to avoid conflict, set by ProjectManager
+let currentOpenScriptName = null;
+let currentOpenVisualScriptName = null;
 
-let currentOpenScriptName = null; // Tracks the script currently active in the editor tab
-let currentOpenVisualScriptName = null; // Tracks visual script in VS editor
+// This will hold the script data for the currently loaded project.
+// It's populated by ProjectManager when a project is loaded.
+let projectScriptsData = {
+    text: {},
+    visual: {}
+};
 
 let uiUpdateHooks = {
     refreshScriptLists: () => {},
-    clearEditorForDeletedScript: (name) => {},
-    clearVSEditorForDeletedScript: (name) => {} 
+    clearEditorForDeletedScript: (name, type) => {}, 
 };
 
 export function initFileManager(hooks) {
@@ -19,121 +24,93 @@ export function initFileManager(hooks) {
     }
 }
 
-// --- Text Scripts ---
-export function getCurrentOpenScriptName() {
-    return currentOpenScriptName;
+export function setCurrentProjectName(name) {
+    currentProjectNameForFileManager = name;
+    // When project context changes, script data is reset/reloaded by ProjectManager.
+    // Open script names are also handled by ProjectManager during load/new.
 }
 
-export function setCurrentOpenScriptName(name) {
-    currentOpenScriptName = name;
-}
+// --- Project Data Functions (localStorage based) - REMOVED or REPURPOSED ---
+// saveProjectData, loadProjectData, listProjects, deleteProject are now handled by ProjectManager
+// using file downloads/uploads.
+
+// --- Text Scripts (In-memory for current project) ---
+export function getCurrentOpenScriptName() { return currentOpenScriptName; }
+export function setCurrentOpenScriptName(name) { currentOpenScriptName = name; }
 
 export function saveScript(name, content) {
+    if (!currentProjectNameForFileManager) { 
+        ScriptEngine.customConsole.error("Cannot save script: No active project context in FileManager.");
+        return false;
+    }
     if (!name || !name.trim()) {
         ScriptEngine.customConsole.error("Script name cannot be empty.");
         return false;
     }
-    if (!name.endsWith(".stela")) name += ".stela"; // Ensure extension
-    const key = SCRIPT_PREFIX + name;
-    try {
-        localStorage.setItem(key, content);
-        setCurrentOpenScriptName(name); // Use setter
-        uiUpdateHooks.refreshScriptLists(); 
-        return true;
-    } catch (e) {
-        ScriptEngine.customConsole.error(`Error saving script "${name}": ${e.message}`);
-        alert("Could not save script. LocalStorage might be full or disabled.");
-        return false;
-    }
+    if (!name.endsWith(".stela")) name += ".stela";
+    
+    projectScriptsData.text[name] = content;
+    setCurrentOpenScriptName(name); 
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
+    ProjectManager.markProjectDirty(); 
+    return true;
 }
 
-export function loadScript(name, updateCurrentlyOpen = true) { 
-    const key = SCRIPT_PREFIX + name;
-    const content = localStorage.getItem(key);
-    if (content === null) {
-        ScriptEngine.customConsole.warn(`Script "${name}" not found.`);
+export function loadScript(name, updateCurrentlyOpen = true) {
+    if (!currentProjectNameForFileManager) return null; 
+    
+    const content = projectScriptsData.text[name];
+    if (content === undefined) { 
         return null;
     }
-    if (updateCurrentlyOpen) {
-        setCurrentOpenScriptName(name); // Use setter
-    }
+    if (updateCurrentlyOpen) setCurrentOpenScriptName(name);
     return content;
 }
 
 export function deleteScript(name) {
-    const key = SCRIPT_PREFIX + name;
-    if (localStorage.getItem(key) === null) {
-        ScriptEngine.customConsole.warn(`Script "${name}" not found for deletion.`);
-        return false;
-    }
-    localStorage.removeItem(key);
-    ScriptEngine.customConsole.log(`Script "${name}" deleted from storage.`);
+    if (!currentProjectNameForFileManager) return false; 
     
-    ScriptEngine.removeCompiledScript(name); 
-
+    if (projectScriptsData.text[name] === undefined) return false;
+    delete projectScriptsData.text[name];
+    ScriptEngine.removeCompiledScript(name);
     if (currentOpenScriptName === name) {
-        setCurrentOpenScriptName(null); // Use setter
-        uiUpdateHooks.clearEditorForDeletedScript(name); 
+        setCurrentOpenScriptName(null);
+        uiUpdateHooks.clearEditorForDeletedScript(name, 'text');
     }
-    uiUpdateHooks.refreshScriptLists(); 
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
+    ProjectManager.markProjectDirty();
     return true;
 }
 
 export function renameScript(oldName, newName) {
-    if (!oldName || !newName || oldName === newName) {
-        ScriptEngine.customConsole.error("Invalid names for renaming.", oldName, newName);
-        return false;
-    }
-    if (!newName.trim().endsWith(".stela")) {
-        newName = newName.trim() + ".stela";
-    }
-    if (listScripts().includes(newName)) {
-        alert(`Script name "${newName}" already exists.`);
-        ScriptEngine.customConsole.error(`Script name "${newName}" already exists.`);
-        return false;
-    }
+    if (!currentProjectNameForFileManager) return false; 
+    if (!oldName || !newName || oldName === newName) return false;
+    if (!newName.trim().endsWith(".stela")) newName = newName.trim() + ".stela";
 
-    const content = loadScript(oldName, false); 
-    if (content === null) {
-        ScriptEngine.customConsole.error(`Script "${oldName}" not found, cannot rename.`);
-        return false; 
-    }
-
-    // Save under new name first
-    const newKey = SCRIPT_PREFIX + newName;
-    try {
-        localStorage.setItem(newKey, content);
-    } catch (e) {
-        ScriptEngine.customConsole.error(`Error saving script "${newName}" during rename: ${e.message}`);
-        alert("Could not save renamed script. LocalStorage might be full or disabled.");
+    if (projectScriptsData.text[newName] !== undefined) {
+        alert(`Script name "${newName}" already exists in the current project.`);
         return false;
     }
-    
-    // Then delete old one
-    const oldKey = SCRIPT_PREFIX + oldName;
-    localStorage.removeItem(oldKey);
-    
+    const content = projectScriptsData.text[oldName];
+    if (content === undefined) return false;
+
+    projectScriptsData.text[newName] = content;
+    delete projectScriptsData.text[oldName];
     ScriptEngine.renameCompiledScript(oldName, newName);
-
-    if (currentOpenScriptName === oldName) {
-        setCurrentOpenScriptName(newName); // Use setter
-    }
-    uiUpdateHooks.refreshScriptLists();
+    if (currentOpenScriptName === oldName) setCurrentOpenScriptName(newName);
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
+    ProjectManager.markProjectDirty();
     return true;
 }
 
-export function listScripts() {
-    const scripts = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith(SCRIPT_PREFIX)) {
-            scripts.push(key.substring(SCRIPT_PREFIX.length));
-        }
-    }
-    return scripts.sort();
+export function listScripts() { 
+    if (!currentProjectNameForFileManager) return []; 
+    
+    return Object.keys(projectScriptsData.text).sort();
 }
 
 export function getUniqueScriptName(baseName = "NewScript") {
+    if (!currentProjectNameForFileManager) return `${baseName}.stela`; 
     let count = 1;
     let name = `${baseName}.stela`;
     const existingScripts = listScripts();
@@ -143,130 +120,87 @@ export function getUniqueScriptName(baseName = "NewScript") {
     return name;
 }
 
-
-// --- Visual Scripts ---
-export function getCurrentOpenVisualScriptName() {
-    return currentOpenVisualScriptName;
+export function getAllTextScriptsForCurrentProject() {
+    return { ...projectScriptsData.text };
 }
 
-export function setCurrentOpenVisualScriptName(name) {
-    currentOpenVisualScriptName = name;
-}
+
+// --- Visual Scripts (In-memory for current project) ---
+export function getCurrentOpenVisualScriptName() { return currentOpenVisualScriptName; }
+export function setCurrentOpenVisualScriptName(name) { currentOpenVisualScriptName = name; }
 
 export function saveVisualScript(name, jsonData) {
-    if (!name || !name.trim()) {
-        ScriptEngine.customConsole.error("Visual Script name cannot be empty.");
-        return false;
+    if (!currentProjectNameForFileManager) { 
+         ScriptEngine.customConsole.error("Cannot save visual script: No active project context in FileManager.");
+         return false;
     }
+    if (!name || !name.trim()) return false;
     if (!name.endsWith(".stela-vs")) name += ".stela-vs";
-    const key = VS_SCRIPT_PREFIX + name;
-    try {
-        localStorage.setItem(key, JSON.stringify(jsonData));
-        setCurrentOpenVisualScriptName(name); // Use setter
-        // ScriptEngine.compileVisualScript(name, jsonData); // Recompile/cache on save // Assuming VS execution will handle this
-        uiUpdateHooks.refreshScriptLists();
-        ScriptEngine.customConsole.log(`Visual script "${name}" saved.`);
-        return true;
-    } catch (e) {
-        ScriptEngine.customConsole.error(`Error saving visual script "${name}": ${e.message}`);
-        alert("Could not save visual script. LocalStorage might be full or disabled.");
-        return false;
-    }
+    
+    projectScriptsData.visual[name] = jsonData;
+    setCurrentOpenVisualScriptName(name);
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
+    ProjectManager.markProjectDirty();
+    return true;
 }
 
 export function loadVisualScript(name, updateCurrentlyOpen = true) {
-    const key = VS_SCRIPT_PREFIX + name;
-    const content = localStorage.getItem(key);
-    if (content === null) {
-        ScriptEngine.customConsole.warn(`Visual Script "${name}" not found.`);
-        return null;
-    }
-    try {
-        const jsonData = JSON.parse(content);
-        if (updateCurrentlyOpen) {
-            setCurrentOpenVisualScriptName(name); // Use setter
-        }
-        return jsonData;
-    } catch (e) {
-        ScriptEngine.customConsole.error(`Error parsing visual script "${name}": ${e.message}`);
-        return null;
-    }
+    if (!currentProjectNameForFileManager) return null; 
+    
+    const data = projectScriptsData.visual[name];
+    if (data === undefined) return null;
+    if (updateCurrentlyOpen) setCurrentOpenVisualScriptName(name);
+    return data; 
 }
 
 export function deleteVisualScript(name) {
-    const key = VS_SCRIPT_PREFIX + name;
-    if (localStorage.getItem(key) === null) {
-        ScriptEngine.customConsole.warn(`Visual Script "${name}" not found for deletion.`);
-        return false;
-    }
-    localStorage.removeItem(key);
-    ScriptEngine.customConsole.log(`Visual Script "${name}" deleted from storage.`);
+    if (!currentProjectNameForFileManager) return false; 
     
-    // ScriptEngine.removeCompiledVisualScript(name); // Assuming VS execution engine will handle missing scripts
-
+    if (projectScriptsData.visual[name] === undefined) return false;
+    delete projectScriptsData.visual[name];
     if (currentOpenVisualScriptName === name) {
-        setCurrentOpenVisualScriptName(null); // Use setter
-        uiUpdateHooks.clearVSEditorForDeletedScript(name); 
+        setCurrentOpenVisualScriptName(null);
+        uiUpdateHooks.clearEditorForDeletedScript(name, 'visual');
     }
-    uiUpdateHooks.refreshScriptLists();
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
+    ProjectManager.markProjectDirty();
     return true;
 }
 
 export function renameVisualScript(oldName, newName) {
-    if (!oldName || !newName || oldName === newName) {
-        ScriptEngine.customConsole.error("Invalid names for renaming visual script.", oldName, newName);
-        return false;
-    }
-     if (!newName.trim().endsWith(".stela-vs")) {
-        newName = newName.trim() + ".stela-vs";
-    }
-    if (listVisualScripts().includes(newName)) {
-        alert(`Visual Script name "${newName}" already exists.`);
-        ScriptEngine.customConsole.error(`Visual Script name "${newName}" already exists.`);
-        return false;
-    }
+    if (!currentProjectNameForFileManager) return false; 
+    if (!oldName || !newName || oldName === newName) return false;
+    if (!newName.trim().endsWith(".stela-vs")) newName = newName.trim() + ".stela-vs";
 
-    const jsonData = loadVisualScript(oldName, false);
-    if (jsonData === null) {
-        ScriptEngine.customConsole.error(`Visual Script "${oldName}" not found, cannot rename.`);
+    if (projectScriptsData.visual[newName] !== undefined) {
+        alert(`Visual script name "${newName}" already exists in the current project.`);
         return false;
     }
-
-    // Save new
-    const newKey = VS_SCRIPT_PREFIX + newName;
-     try {
-        localStorage.setItem(newKey, JSON.stringify(jsonData));
-    } catch (e) {
-        ScriptEngine.customConsole.error(`Error saving visual script "${newName}" during rename: ${e.message}`);
-        alert("Could not save renamed visual script. LocalStorage might be full or disabled.");
-        return false;
-    }
-
-    // Delete old
-    const oldKey = VS_SCRIPT_PREFIX + oldName;
-    localStorage.removeItem(oldKey);
+    const jsonData = projectScriptsData.visual[oldName];
+    if (jsonData === undefined) return false;
     
-    // ScriptEngine.renameCompiledVisualScript(oldName, newName); // Assuming VS execution engine handles this
-
-    if (currentOpenVisualScriptName === oldName) {
-        setCurrentOpenVisualScriptName(newName); // Use setter
-    }
-    uiUpdateHooks.refreshScriptLists();
+    projectScriptsData.visual[newName] = jsonData;
+    delete projectScriptsData.visual[oldName];
+    if (currentOpenVisualScriptName === oldName) setCurrentOpenVisualScriptName(newName);
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
+    ProjectManager.markProjectDirty();
     return true;
 }
 
-export function listVisualScripts() {
-    const scripts = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith(VS_SCRIPT_PREFIX)) {
-            scripts.push(key.substring(VS_SCRIPT_PREFIX.length));
-        }
-    }
-    return scripts.sort();
+export function listVisualScripts() { 
+    if (!currentProjectNameForFileManager) return []; 
+    
+    return Object.keys(projectScriptsData.visual).sort();
 }
 
-export function getUniqueVisualScriptName(baseName = "NewVS") { // Changed base name slightly
+export function visualScriptExists(scriptName) { 
+    if (!currentProjectNameForFileManager || !scriptName) return false; 
+    return projectScriptsData.visual[scriptName] !== undefined;
+}
+
+
+export function getUniqueVisualScriptName(baseName = "NewVS") {
+    if (!currentProjectNameForFileManager) return `${baseName}.stela-vs`; 
     let count = 1;
     let name = `${baseName}.stela-vs`;
     const existingScripts = listVisualScripts();
@@ -274,4 +208,20 @@ export function getUniqueVisualScriptName(baseName = "NewVS") { // Changed base 
         name = `${baseName}${count++}.stela-vs`;
     }
     return name;
+}
+
+export function getAllVisualScriptsForCurrentProject() {
+    return { ...projectScriptsData.visual };
+}
+
+// Used by ProjectManager to populate FileManager's in-memory script store for a newly loaded project
+export function loadAllScriptsForProject(textScriptsMap, visualScriptsMap) {
+    projectScriptsData.text = textScriptsMap ? { ...textScriptsMap } : {};
+    projectScriptsData.visual = visualScriptsMap ? { ...visualScriptsMap } : {};
+
+    ScriptEngine.clearCompiledScripts(); 
+    for (const scriptName in projectScriptsData.text) {
+        ScriptEngine.compileScript(scriptName, projectScriptsData.text[scriptName], false); 
+    }
+    uiUpdateHooks.refreshScriptLists(currentProjectNameForFileManager); 
 }

@@ -37,20 +37,27 @@ function handleSaveVisualScriptAsText() {
     // FileManager.getUniqueScriptName will add .stela and ensure uniqueness
     const suggestedStelaName = FileManager.getUniqueScriptName(suggestedStelaNameBase);
 
-    const newStelaScriptNameWithExt = prompt("Enter name for the converted Stela text script:", suggestedStelaName);
+    const newStelaScriptNamePrompt = prompt("Enter name for the converted Stela text script:", suggestedStelaName);
 
-    if (!newStelaScriptNameWithExt || !newStelaScriptNameWithExt.trim()) {
+    if (!newStelaScriptNamePrompt || !newStelaScriptNamePrompt.trim()) {
         ScriptEngine.customConsole.log("Save as text script cancelled by user.");
         return;
     }
     
-    // FileManager.saveScript handles adding .stela extension if not present,
-    // compilation, and refreshing UI lists.
-    if (FileManager.saveScript(newStelaScriptNameWithExt, stelaCode)) {
-        ScriptEngine.customConsole.log(`Visual script successfully converted and saved as text script: "${newStelaScriptNameWithExt.endsWith(".stela") ? newStelaScriptNameWithExt : newStelaScriptNameWithExt + ".stela"}"`);
+    let finalStelaScriptName = newStelaScriptNamePrompt.trim();
+    if (!finalStelaScriptName.endsWith(".stela")) {
+        finalStelaScriptName += ".stela";
+    }
+    
+    // FileManager.saveScript also ensures .stela extension internally, 
+    // but having it explicitly here makes the name consistent for compilation.
+    if (FileManager.saveScript(finalStelaScriptName, stelaCode)) {
+        ScriptEngine.customConsole.log(`Visual script successfully converted and saved as text script: "${finalStelaScriptName}"`);
+        // Compile the newly saved text script immediately
+        ScriptEngine.compileScript(finalStelaScriptName, stelaCode); 
     } else {
         // FileManager.saveScript would have logged an error.
-        // ScriptEngine.customConsole.error(`Failed to save converted text script as "${newStelaScriptNameWithExt}".`);
+        // ScriptEngine.customConsole.error(`Failed to save converted text script as "${finalStelaScriptName}".`);
     }
 }
 
@@ -108,22 +115,24 @@ export function saveVisualScript() {
     
     let nameToSave = currentVisualScriptFileName || FileManager.getCurrentOpenVisualScriptName();
     if (!nameToSave) {
-        const baseName = FileManager.getUniqueVisualScriptName("MyVisualScript"); // Note: .stela-vs is added by getUniqueVisualScriptName
-        nameToSave = prompt("Enter visual script name:", baseName);
+        // Prompt for base name, FileManager will add extension and ensure uniqueness
+        const baseNameSuggestion = FileManager.getUniqueVisualScriptName("MyVisualScript").replace(/\.stela-vs$/, "");
+        nameToSave = prompt("Enter visual script name (e.g., MyVisualLogic):", baseNameSuggestion);
         if (!nameToSave || !nameToSave.trim()) {
             ScriptEngine.customConsole.log("Visual script save cancelled by user.");
-            return null; // User cancelled or entered empty name
+            return null; 
         }
     }
 
     // FileManager.saveVisualScript ensures the .stela-vs extension
+    // and returns the final name used (which might have uniqueness numbers added)
     if (FileManager.saveVisualScript(nameToSave, dataToSave)) { 
-        currentVisualScriptFileName = nameToSave.endsWith(".stela-vs") ? nameToSave : nameToSave + ".stela-vs";
-        FileManager.setCurrentOpenVisualScriptName(currentVisualScriptFileName); 
-        updateVisualScriptEditorTabName(currentVisualScriptFileName); 
-        return { name: currentVisualScriptFileName, data: dataToSave }; 
+        const finalName = FileManager.getCurrentOpenVisualScriptName(); // Get the name FM actually used
+        currentVisualScriptFileName = finalName; 
+        updateVisualScriptEditorTabName(finalName); 
+        return { name: finalName, data: dataToSave }; 
     }
-    return null; // FileManager.saveVisualScript would have logged an error
+    return null; 
 }
 
 export function clearEditor() { 

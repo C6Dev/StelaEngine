@@ -9,8 +9,8 @@ import { VisualScriptExecutionManager } from './visual-script-execution-manager.
 
 export class VisualScriptGraph {
     constructor() {
-        this.nodes = []; 
-        this.connections = []; 
+        this.nodes = [];
+        this.connections = [];
         this.nodeIdCounter = 0;
         this.connectionIdCounter = 0;
 
@@ -28,8 +28,8 @@ export class VisualScriptGraph {
         // Handlers for NodeDOM are now obtained from the interactionManager instance
         this._handleNodeMouseDown = this.interactionManager.boundHandleNodeMouseDown;
         this._handlePinClick = this.interactionManager.boundHandlePinClick;
-        
-        this._removeNodeAndConnections = this.removeNodeAndConnections.bind(this); 
+
+        this._removeNodeAndConnections = this.removeNodeAndConnections.bind(this);
         this._isInputPinConnected = this._isInputPinConnected.bind(this);
     }
 
@@ -53,8 +53,8 @@ export class VisualScriptGraph {
             type: type,
             x: x,
             y: y,
-            values: {}, 
-            element: null 
+            values: {},
+            element: null
         };
 
         Object.entries(config.inputs).forEach(([inputName, inputConfig]) => {
@@ -66,19 +66,19 @@ export class VisualScriptGraph {
                 newNodeData.values[inputName] = '';
             }
         });
-        
+
         const eventHandlers = {
             onValueChange: this._handleNodeValueChange.bind(this),
             onMouseDown: this._handleNodeMouseDown, // Uses the bound method from interactionManager
             onPinClick: this._handlePinClick,       // Uses the bound method from interactionManager
             isInputPinConnected: this._isInputPinConnected,
-            onNodeDeleteRequest: this._removeNodeAndConnections 
+            onNodeDeleteRequest: this._removeNodeAndConnections
         };
         newNodeData.element = NodeDOM.createNodeElement(newNodeData, config, eventHandlers);
         this.nodes.push(newNodeData);
         return newNodeData;
     }
-    
+
     _isInputPinConnected(nodeId, pinName) {
         return this.connections.some(conn => conn.toNodeId === nodeId && conn.toPinName === pinName);
     }
@@ -102,7 +102,7 @@ export class VisualScriptGraph {
                 conn => conn.fromNodeId === nodeId || conn.toNodeId === nodeId
             );
             connectionsToRemove.forEach(conn => this.removeConnection(conn.id));
-            
+
             this.executionContext.customConsole.log(`Node ${nodeToRemove.type} (ID: ${nodeId}) and its connections removed.`);
         }
     }
@@ -119,7 +119,7 @@ export class VisualScriptGraph {
                 this.removeConnection(existingInputConnection.id);
             }
         }
-        
+
         this.connectionIdCounter++;
         const newConnectionData = {
             id: this.connectionIdCounter,
@@ -132,7 +132,7 @@ export class VisualScriptGraph {
         newConnectionData.lineElement = ConnectionDOM.createConnectionLineElement(newConnectionData.id);
         this.connections.push(newConnectionData);
         this._drawSingleConnection(newConnectionData);
-        
+
         // Ensure the input field is disabled if it's now connected
         if (toNode && toNode.element && toPinConfig && toPinConfig.type !== 'flow' && !toPinConfig.noPin) {
              NodeDOM.updateNodeInputFieldsDisabledState(toNode.element, toNode.id, toNodeConfig, this._isInputPinConnected);
@@ -148,7 +148,7 @@ export class VisualScriptGraph {
         const fromPinEl = fromNode.element.querySelector(`.vs-pin[data-pin-name="${connectionData.fromPinName}"][data-pin-type="output"]`);
         const toPinEl = toNode.element.querySelector(`.vs-pin[data-pin-name="${connectionData.toPinName}"][data-pin-type="input"]`);
         if (!fromPinEl || !toPinEl) return;
-        
+
         // Get pin positions through the interaction manager's helper, which accounts for pan/zoom
         // The connection interaction sub-module now has _getPinLogicalPosition.
         // For drawing, we need logical positions.
@@ -156,7 +156,7 @@ export class VisualScriptGraph {
         const endPos = this.interactionManager.connectionInteraction._getPinLogicalPosition(toPinEl);
         ConnectionDOM.updateConnectionLineElement(connectionData.lineElement, startPos, endPos);
     }
-    
+
     updateConnectionsForNode(nodeId) {
         this.connections.forEach(conn => {
             if (conn.fromNodeId === nodeId || conn.toNodeId === nodeId) {
@@ -182,17 +182,18 @@ export class VisualScriptGraph {
             }
         }
     }
-    
+
     clear() {
         this.nodes.forEach(node => NodeDOM.removeNodeElement(node.element));
         this.connections.forEach(conn => ConnectionDOM.removeConnectionLineElement(conn.lineElement));
-        
+
         this.nodes = [];
         this.connections = [];
         this.nodeIdCounter = 0;
         this.connectionIdCounter = 0;
-        if (this.interactionManager) { 
-            this.interactionManager._resetPendingConnection();
+        if (this.interactionManager && this.interactionManager.connectionInteraction) {
+            // Corrected call to the method on the connectionInteraction sub-manager
+            this.interactionManager.connectionInteraction._resetPendingConnectionState();
         }
     }
 
@@ -219,7 +220,7 @@ export class VisualScriptGraph {
             stateData.nodes.forEach(nodeSaveData => {
                 const config = NODE_TYPES[nodeSaveData.type];
                 if (!config) return;
-                
+
                 const newNodeData = {
                     id: nodeSaveData.id,
                     type: nodeSaveData.type,
@@ -245,7 +246,7 @@ export class VisualScriptGraph {
                     connSaveData.fromNodeId, connSaveData.fromPinName,
                     connSaveData.toNodeId, connSaveData.toPinName
                 );
-                if(newConn && connSaveData.id) newConn.id = connSaveData.id; 
+                if(newConn && connSaveData.id) newConn.id = connSaveData.id;
             });
         } else {
              this.addNode(NODE_TYPES['event-start'] ? 'event-start' : Object.keys(NODE_TYPES)[0] , 50, 50);
@@ -264,6 +265,6 @@ export class VisualScriptGraph {
         if (this.interactionManager) {
             this.interactionManager.destroy();
         }
-        this.clear(); 
+        this.clear();
     }
 }

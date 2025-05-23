@@ -1,7 +1,7 @@
 #left-panel, #right-panel {
     width: 250px; 
-    background-color: #252526; 
-    border-right: 1px solid #000000; 
+    background-color: #242424; 
+    border-right: 1px solid #0F0F0F; 
     display: flex;
     flex-direction: column;
     padding: 8px; 
@@ -11,35 +11,35 @@
 }
 #right-panel {
     border-right: none;
-    border-left: 1px solid #000000; 
-    width: 280px; 
+    border-left: 1px solid #0F0F0F; 
+    width: 260px; 
 }
 
 #left-panel h3, #right-panel #properties-panel h3 { 
     margin-top: 0;
     font-size: 1em; 
     color: #E0E0E0; 
-    border-bottom: 1px solid #3F3F42; 
+    border-bottom: 1px solid #3A3A3A; 
     padding-bottom: 6px; 
-    margin-bottom: 10px; 
+    margin-bottom: 8px; 
 }
 
 #object-list-container { 
     flex-grow: 1;
     overflow-y: auto;
     background-color: #1E1E1E; 
-    border: 1px solid #000000;
-    border-radius: 2px; 
+    border: 1px solid #0F0F0F; 
+    border-radius: 3px; 
 }
 
 #object-list {
     padding: 5px; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     font-size: 0.8em; 
-    color: #CCCCCC;
+    color: #C0C0C0; 
 }
 #object-list .object-list-item {
-    padding: 3px 5px; 
+    padding: 4px 6px; 
     cursor: pointer;
     border-radius: 2px;
     margin-bottom: 1px; 
@@ -48,17 +48,17 @@
     text-overflow: ellipsis; 
 }
 #object-list .object-list-item:hover {
-    background-color: #2A2A2D; 
+    background-color: #303030; 
 }
 #object-list .object-list-item.selected {
-    background-color: #0E639C; 
+    background-color: #0D99FF; 
     color: #FFFFFF;
 }
 
 #bottom-panel {
-    height: 180px; 
-    background-color: #252526; 
-    border-top: 1px solid #000000; 
+    height: 200px; 
+    background-color: #242424; 
+    border-top: 1px solid #0F0F0F; 
     display: flex;
     flex-direction: column;
     flex-shrink: 0;

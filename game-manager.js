@@ -5,6 +5,7 @@ import * as UIManager from './ui-manager.js';
 import * as ScriptEngine from './script-engine.js';
 
 let isPlaying = false;
+let isCameraEjected = false; // New state for camera ejection
 const initialObjectStates = new Map(); // UUID -> { position, quaternion, scale }
 let initialCameraState = null; // { position, quaternion, fov, aspect, near, far } (aspect might not be needed to restore if window doesn't change)
 let firstPlayFrame = true; // Tracks if it's the first frame of the current play session
@@ -17,9 +18,14 @@ export function getIsPlaying() {
     return isPlaying;
 }
 
+export function getIsCameraEjected() { 
+    return isCameraEjected; 
+}
+
 export function startGame() {
     if (isPlaying) return;
     isPlaying = true;
+    isCameraEjected = false; // Reset camera eject state on new game start
     firstPlayFrame = true; // Set on game start
 
     initialObjectStates.clear();
@@ -56,6 +62,7 @@ export function startGame() {
     } else {
         ThreeScene.setCameraTarget(null); // Ensure no target if not explicitly set for play
     }
+    ThreeScene.detachTransformControls(); // Ensure gizmos are off during play
 
     UIManager.setPlayModeUI(true);
     ScriptEngine.customConsole.log("Game Started.");
@@ -64,6 +71,7 @@ export function startGame() {
 export function stopGame() {
     if (!isPlaying) return;
     isPlaying = false;
+    isCameraEjected = false; // Reset camera eject state on game stop
     // firstPlayFrame will be true again when startGame is called next.
     
     const sceneObjectsMap = ObjectManager.getSceneObjects();
@@ -93,6 +101,11 @@ export function stopGame() {
     ThreeScene.getControls().reset(); 
     ThreeScene.getControls().enabled = true;
 
+    const currentSelectedObject = ObjectManager.getSelectedObject();
+    if (currentSelectedObject) {
+        ThreeScene.attachTransformControls(currentSelectedObject); // Re-attach gizmo if an object is selected
+    }
+
     UIManager.setPlayModeUI(false);
     UIManager.populatePropertiesPanel(); // Refresh properties
     UIManager.updateObjectListUI();    // Refresh hierarchy
@@ -101,6 +114,18 @@ export function stopGame() {
                                                        // This is implicitly handled by populatePropertiesPanel re-evaluating.
 
     ScriptEngine.customConsole.log("Game Stopped. Editor mode active.");
+}
+
+export function ejectCamera() {
+    if (!isPlaying || isCameraEjected) return; // Only eject if playing and not already ejected
+
+    isCameraEjected = true;
+    ThreeScene.setCameraTarget(null);       // Detach from any game object
+    ThreeScene.getControls().enabled = true; // Re-enable orbit controls
+    // Optional: If you want the camera to snap to a default "editor" view upon eject:
+    // ThreeScene.getControls().reset(); 
+    UIManager.setPlayModeUI(true); // Re-call to update button states (e.g., disable eject button)
+    ScriptEngine.customConsole.log("Camera Ejected. Orbit controls active. Game continues.");
 }
 
 export function getGameContext() {

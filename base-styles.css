@@ -2,8 +2,8 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #1E1E1E; 
-    color: #CCCCCC; 
+    background-color: #1A1A1A; 
+    color: #DEDEDE; 
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -11,13 +11,13 @@ body {
 }
 
 header {
-    background-color: #333333; 
+    background-color: #2E2E2E; 
     color: #E0E0E0;
     padding: 5px 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #000000; 
+    border-bottom: 1px solid #0F0F0F; 
     height: 48px; 
     box-sizing: border-box;
     flex-shrink: 0; 
@@ -26,18 +26,28 @@ header {
 .header-left {
     display: flex;
     align-items: center;
+    gap: 15px; 
 }
 
 header h1 {
-    margin: 0 10px 0 0;
+    margin: 0; 
     font-size: 1.4em; 
     color: #FFFFFF;
 }
 
-header p {
+header p { 
     margin: 0;
     font-size: 0.75em; 
-    color: #888888;
+    color: #9E9E9E;
+}
+
+#current-project-display {
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #B0B0B0;
+    padding: 3px 6px;
+    background-color: #202020;
+    border-radius: 3px;
 }
 
 #app-main-content {
@@ -50,7 +60,7 @@ header p {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background-color: #252526; 
+    background-color: #242424; 
     overflow: hidden;
 }
 

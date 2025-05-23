@@ -26,11 +26,21 @@
     <header>
         <div class="header-left">
             <h1>Stela</h1>
-            <p>3D Environment Editor</p>
+            <p id="current-project-display">Project: Untitled</p>
         </div>
         <div class="menu-bar">
+            <div class="dropdown">
+                <button id="file-menu-btn" class="dropdown-btn">File</button>
+                <div id="file-dropdown-content" class="dropdown-content">
+                    <a href="#" id="new-project-btn">New Project</a>
+                    <a href="#" id="save-project-btn">Save Project</a>
+                    <a href="#" id="save-project-as-btn">Save Project As...</a>
+                    <a href="#" id="load-project-btn">Load Project...</a>
+                </div>
+            </div>
             <button id="play-game-btn">Play</button>
             <button id="stop-game-btn" style="display:none;">Stop</button>
+            <button id="eject-camera-btn" style="display:none;">Eject Camera</button>
             <div class="dropdown">
                 <button id="add-object-menu-btn" class="dropdown-btn">Add Object</button>
                 <div id="add-object-dropdown-content" class="dropdown-content">
@@ -38,6 +48,11 @@
                     <a href="#" id="add-sphere-btn">Sphere</a>
                     <a href="#" id="add-cylinder-btn">Cylinder</a>
                 </div>
+            </div>
+            <div class="gizmo-controls">
+                <button id="gizmo-translate-btn" class="gizmo-btn active-gizmo-btn" title="Translate (W)">T</button>
+                <button id="gizmo-rotate-btn" class="gizmo-btn" title="Rotate (E)">R</button>
+                <button id="gizmo-scale-btn" class="gizmo-btn" title="Scale (S)">S</button>
             </div>
         </div>
     </header>
@@ -158,7 +173,12 @@ print('My object is ' + object.name);"></textarea>
                         <button id="add-script-component-btn">Add Script</button>
                     </div>
                 </div>
-                 <button id="delete-object-btn" style="display:none;">Delete Selected Object</button>
+                <div class="property-group" id="scene-settings-group" style="display: block;"> 
+                    <h4>Scene Settings</h4>
+                    <label for="prop-bg-color">Background Color:</label>
+                    <input type="color" id="prop-bg-color" value="#000000">
+                </div>
+                <button id="delete-object-btn" style="display:none;">Delete Selected Object</button>
             </div>
         </div>
     </div>
@@ -182,6 +202,19 @@ print('My object is ' + object.name);"></textarea>
             </div>
         </div>
     </footer>
+
+    <div id="load-project-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-button" id="close-load-project-modal">&times;</span>
+            <h3>Load Project From Local Storage</h3> 
+            <div id="load-project-list">
+                <!-- Project list will be populated here -->
+            </div>
+            <p id="no-projects-message" style="display:none;">No saved projects found.</p>
+        </div>
+    </div>
+
+    <input type="file" id="load-project-file-input" accept=".stela-project,.json" style="display: none;" />
 
     <script type="module" src="main.js"></script>
 </body>
