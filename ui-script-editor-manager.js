@@ -16,7 +16,7 @@ export function loadTextScriptIntoEditor(name, content, isSaved = true) {
     DOM.scriptInput.value = content;
     currentTextScriptFileNameInEditor = name; 
     if (isSaved) { 
-        FileManager.setCurrentOpenScriptName(name); 
+        FileManager.setCurrentOpenTextScriptPath(name); 
     }
     updateTextScriptEditorTabName(name);
     TabManager.switchCenterTab('script');
@@ -25,7 +25,7 @@ export function loadTextScriptIntoEditor(name, content, isSaved = true) {
 export function clearTextEditorToUntitled() {
     DOM.scriptInput.value = '// New unsaved script\n';
     currentTextScriptFileNameInEditor = null;
-    FileManager.setCurrentOpenScriptName(null);
+    FileManager.setCurrentOpenTextScriptPath(null);
     updateTextScriptEditorTabName(null);
 }
 
@@ -33,7 +33,7 @@ function handleSaveCurrentScript() {
     const activeTab = TabManager.getActiveCenterTab(); 
 
     if (activeTab === 'script') { 
-        let nameToSave = currentTextScriptFileNameInEditor || FileManager.getCurrentOpenScriptName();
+        let nameToSave = currentTextScriptFileNameInEditor || FileManager.getCurrentOpenTextScriptPath();
         if (!nameToSave) { 
             const baseNameSuggestion = FileManager.getUniqueScriptName("MyScript").replace(/\.stela$/, "");
             nameToSave = prompt("Enter text script name (e.g., MyScript):", baseNameSuggestion);
@@ -45,7 +45,7 @@ function handleSaveCurrentScript() {
         const content = DOM.scriptInput.value;
         if (FileManager.saveScript(nameToSave, content)) { 
             currentTextScriptFileNameInEditor = nameToSave.endsWith(".stela") ? nameToSave : nameToSave + ".stela"; 
-            const finalName = FileManager.getCurrentOpenScriptName(); 
+            const finalName = FileManager.getCurrentOpenTextScriptPath(); 
             updateTextScriptEditorTabName(finalName); 
             ScriptEngine.compileScript(finalName, content); 
         }
@@ -62,7 +62,7 @@ function setupTextScriptEditorControls() {
     DOM.runUpdateBtn.addEventListener('click', () => { 
         ScriptEngine.clearOutputMessages();
         const scriptContent = DOM.scriptInput.value;
-        const openTextScriptName = currentTextScriptFileNameInEditor || FileManager.getCurrentOpenScriptName();
+        const openTextScriptName = currentTextScriptFileNameInEditor || FileManager.getCurrentOpenTextScriptPath();
         if (openTextScriptName) {
             ScriptEngine.compileScript(openTextScriptName, scriptContent);
         } else {
@@ -99,16 +99,16 @@ export function initScriptEditorManager() {
     };
 
     UIProjectFilesManager.initUIProjectFilesManager(textEditorInterface);
-    updateTextScriptEditorTabName(FileManager.getCurrentOpenScriptName() || 'Untitled'); 
+    updateTextScriptEditorTabName(FileManager.getCurrentOpenTextScriptPath() || 'Untitled'); 
 }
 
 export const handleScriptDeleted = (scriptName, scriptType) => { 
-    if (scriptType === 'text' && (currentTextScriptFileNameInEditor === scriptName || FileManager.getCurrentOpenScriptName() === scriptName)) {
+    if (scriptType === 'text' && (currentTextScriptFileNameInEditor === scriptName || FileManager.getCurrentOpenTextScriptPath() === scriptName)) {
         clearTextEditorToUntitled();
-    } else if (scriptType === 'visual' && FileManager.getCurrentOpenVisualScriptName() === scriptName) {
+    } else if (scriptType === 'visual' && FileManager.getCurrentOpenVisualScriptPath() === scriptName) {
         VisualScriptEditorManager.clearEditor(); 
     }
     // UIProjectFilesManager's populateScriptFileList will be called via FileManager hook
     // If the call doesn't originate from FileManager, you might need to call it directly:
-    // UIProjectFilesManager.getPopulateScriptFileListFunction()(); 
+    // UIProjectFilesManager.getPopulateProjectFilesListFunction()(); 
 };

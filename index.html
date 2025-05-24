@@ -13,11 +13,13 @@
     <link rel="stylesheet" href="properties-panel-styles.css">
     <link rel="stylesheet" href="project-files-styles.css">
     <link rel="stylesheet" href="console-styles.css">
+    <link rel="stylesheet" href="level-manager-styles.css"> 
     <script type="importmap">
     {
         "imports": {
             "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+            "three/addons/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
         }
     }
     </script>
@@ -47,6 +49,7 @@
                     <a href="#" id="add-cube-btn">Cube</a>
                     <a href="#" id="add-sphere-btn">Sphere</a>
                     <a href="#" id="add-cylinder-btn">Cylinder</a>
+                    <a href="#" id="add-gltf-btn">Import GLTF/GLB...</a>
                 </div>
             </div>
             <div class="gizmo-controls">
@@ -70,6 +73,7 @@
                 <button id="scene-tab-btn" class="tab-btn active">Scene</button>
                 <button id="script-editor-tab-btn" class="tab-btn">Script: <span id="current-script-name-tab">Untitled</span></button>
                 <button id="visual-script-editor-tab-btn" class="tab-btn">Visual Script: <span id="current-visual-script-name-tab">Untitled</span></button>
+                <button id="model-editor-tab-btn" class="tab-btn">Model Editor</button>
             </div>
             <div id="center-content">
                 <div id="scene-view-content" class="tab-content active">
@@ -120,7 +124,18 @@ print('My object is ' + object.name);"></textarea>
                             <!-- Nodes will be added here by JS -->
                         </div>
                         <div id="vs-marquee-selection-rect" style="display: none;"></div>
+                        <!-- New Context Menu for Visual Script Nodes -->
+                        <div id="vs-node-context-menu" class="vs-context-menu" style="display: none;">
+                            <input type="text" id="vs-node-context-menu-search" placeholder="Search nodes...">
+                            <ul id="vs-node-context-menu-list">
+                                <!-- Node items will be populated here -->
+                            </ul>
+                        </div>
                     </div>
+                </div>
+                <div id="model-editor-content" class="tab-content">
+                    <!-- Content for model editor/viewer will go here -->
+                    <p>Model Editor - Placeholder</p>
                 </div>
             </div>
         </div>
@@ -174,7 +189,7 @@ print('My object is ' + object.name);"></textarea>
                     </div>
                 </div>
                 <div class="property-group" id="scene-settings-group" style="display: block;"> 
-                    <h4>Scene Settings</h4>
+                    <h4>Scene Settings (Current Level)</h4> 
                     <label for="prop-bg-color">Background Color:</label>
                     <input type="color" id="prop-bg-color" value="#000000">
                 </div>
@@ -190,9 +205,15 @@ print('My object is ' + object.name);"></textarea>
         </div>
         <div id="bottom-content">
             <div id="project-content" class="tab-content active">
+                <div id="level-management-header"> 
+                    <h4>Levels <span id="active-level-display">(Level: None)</span></h4>
+                    <button id="create-new-level-btn">New Level</button>
+                </div>
+                <div id="level-list"></div>
+                <hr class="project-content-separator">
                 <div id="script-file-list-header">
-                    <h4>Scripts</h4>
-                    <button id="create-new-script-btn">New Script</button>
+                    <h4>Project Files</h4>
+                    <button id="create-new-script-btn">New File...</button> 
                 </div>
                 <div id="script-file-list"></div>
             </div>
@@ -206,7 +227,7 @@ print('My object is ' + object.name);"></textarea>
     <div id="load-project-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-button" id="close-load-project-modal">&times;</span>
-            <h3>Load Project From Local Storage</h3> 
+            <h3>Load Project From File</h3> 
             <div id="load-project-list">
                 <!-- Project list will be populated here -->
             </div>
@@ -215,6 +236,8 @@ print('My object is ' + object.name);"></textarea>
     </div>
 
     <input type="file" id="load-project-file-input" accept=".stela-project,.json" style="display: none;" />
+    <input type="file" id="model-file-input" accept=".gltf,.glb" style="display: none;" />
+
 
     <script type="module" src="main.js"></script>
 </body>

@@ -17,6 +17,8 @@ export class VisualScriptGraph {
         this.interactionManager = new VisualScriptInteractionManager(this);
         this.executionManager = new VisualScriptExecutionManager(this);
 
+        this.onContextMenuRequested = null; // Callback for UI manager to show context menu
+
         this.executionContext = {
             gameObject: null,
             sceneObjects: {},
@@ -234,7 +236,7 @@ export class VisualScriptGraph {
                     onMouseDown: this._handleNodeMouseDown,
                     onPinClick: this._handlePinClick,
                     isInputPinConnected: this._isInputPinConnected,
-                    onNodeDeleteRequest: this._removeNodeAndConnections // Add handler for deletion
+                    onNodeDeleteRequest: this._removeNodeAndConnections 
                 };
                 newNodeData.element = NodeDOM.createNodeElement(newNodeData, config, eventHandlers);
                 this.nodes.push(newNodeData);
@@ -246,10 +248,19 @@ export class VisualScriptGraph {
                     connSaveData.fromNodeId, connSaveData.fromPinName,
                     connSaveData.toNodeId, connSaveData.toPinName
                 );
-                if(newConn && connSaveData.id) newConn.id = connSaveData.id;
+                if(newConn && connSaveData.id) { // Restore original ID if present
+                     newConn.id = connSaveData.id;
+                     // Ensure connectionIdCounter is at least the max loaded ID
+                     this.connectionIdCounter = Math.max(this.connectionIdCounter, connSaveData.id);
+                }
             });
+            // Ensure nodeIdCounter is at least the max loaded ID
+            const maxNodeId = stateData.nodes.reduce((max, n) => Math.max(max, n.id), 0);
+            this.nodeIdCounter = Math.max(this.nodeIdCounter, maxNodeId);
+
         } else {
-             this.addNode(NODE_TYPES['event-start'] ? 'event-start' : Object.keys(NODE_TYPES)[0] , 50, 50);
+             // No default node on load if state is empty. User can add via context menu.
+             // this.addNode(NODE_TYPES['event-start'] ? 'event-start' : Object.keys(NODE_TYPES)[0] , 50, 50);
         }
     }
 

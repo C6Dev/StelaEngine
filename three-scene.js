@@ -160,6 +160,37 @@ export function getBackgroundColor() {
     return sceneBackgroundColor;
 }
 
+export function captureSceneThumbnail(width, height) {
+    if (!renderer || !scene || !camera) {
+        console.error("Three.js scene not ready for thumbnail capture.");
+        return null;
+    }
+
+    const originalWidth = renderer.domElement.width;
+    const originalHeight = renderer.domElement.height;
+    const originalAspect = camera.aspect;
+
+    // Temporarily set size for thumbnail capture
+    // This might affect the main view for a frame, consider offscreen rendering for more complex scenarios
+    renderer.setSize(width, height, false); // false = don't update style
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    
+    renderer.render(scene, camera); // Render the scene at thumbnail size
+
+    const dataURL = renderer.domElement.toDataURL('image/png');
+
+    // Restore original size and aspect
+    renderer.setSize(originalWidth, originalHeight, false);
+    camera.aspect = originalAspect;
+    camera.updateProjectionMatrix();
+    
+    // Render again to restore main view (optional, but good practice if resizing was visible)
+    // renderer.render(scene, camera); 
+
+    return dataURL;
+}
+
 export function clearSceneContent() {
     if (!scene) return;
     // Remove all direct children of the scene that are Meshes or Groups (user objects)

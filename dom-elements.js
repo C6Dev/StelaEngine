@@ -17,6 +17,7 @@ export const addObjectDropdownContent = document.getElementById('add-object-drop
 export const addCubeBtn = document.getElementById('add-cube-btn');
 export const addSphereBtn = document.getElementById('add-sphere-btn');
 export const addCylinderBtn = document.getElementById('add-cylinder-btn');
+export const addGltfBtn = document.getElementById('add-gltf-btn');
 
 // Gizmo Controls
 export const gizmoTranslateBtn = document.getElementById('gizmo-translate-btn');
@@ -39,6 +40,7 @@ export const scriptEditorTabBtn = document.getElementById('script-editor-tab-btn
 export const currentScriptNameTabSpan = document.getElementById('current-script-name-tab');
 export const visualScriptEditorTabBtn = document.getElementById('visual-script-editor-tab-btn'); 
 export const currentVisualScriptNameTabSpan = document.getElementById('current-visual-script-name-tab'); 
+export const modelEditorTabBtn = document.getElementById('model-editor-tab-btn');
 
 export const centerContent = document.getElementById('center-content');
 export const sceneViewContent = document.getElementById('scene-view-content');
@@ -61,6 +63,13 @@ export const visualScriptGraphContainer = document.getElementById('visual-script
 export const visualScriptSvgLayer = document.getElementById('visual-script-svg-layer');
 export const visualScriptNodesContainer = document.getElementById('visual-script-nodes-container');
 export const vsMarqueeSelectionRect = document.getElementById('vs-marquee-selection-rect');
+// New: Visual Script Node Context Menu
+export const vsNodeContextMenu = document.getElementById('vs-node-context-menu');
+export const vsNodeContextMenuSearch = document.getElementById('vs-node-context-menu-search');
+export const vsNodeContextMenuList = document.getElementById('vs-node-context-menu-list');
+
+// Model Editor Elements 
+export const modelEditorContent = document.getElementById('model-editor-content');
 
 // Right Panel (Properties)
 export const propertiesPanel = document.getElementById('properties-panel');
@@ -106,6 +115,14 @@ export const consoleTabBtn = document.getElementById('console-tab-btn');
 
 export const bottomContent = document.getElementById('bottom-content');
 export const projectContent = document.getElementById('project-content');
+
+// Level Management in Project Content
+export const levelManagementHeader = document.getElementById('level-management-header');
+export const activeLevelDisplay = document.getElementById('active-level-display');
+export const createNewLevelBtn = document.getElementById('create-new-level-btn');
+export const levelListDiv = document.getElementById('level-list');
+
+// Script Files in Project Content
 export const scriptFileListHeader = document.getElementById('script-file-list-header');
 export const createNewScriptBtn = document.getElementById('create-new-script-btn');
 export const scriptFileListDiv = document.getElementById('script-file-list');
@@ -122,3 +139,4 @@ export const noProjectsMessage = document.getElementById('no-projects-message');
 
 // Hidden file input for project loading
 export const loadProjectFileInput = document.getElementById('load-project-file-input');
+export const modelFileInput = document.getElementById('model-file-input');

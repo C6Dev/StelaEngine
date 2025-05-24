@@ -228,3 +228,52 @@
     stroke-dasharray: 4,4; 
     fill: none;
 }
+
+/* Visual Script Node Context Menu */
+.vs-context-menu {
+    position: absolute;
+    background-color: #333337; /* Darker than node header */
+    border: 1px solid #181818; /* Very dark border */
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 1000; /* Above nodes and connections */
+    min-width: 200px;
+    max-height: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+#vs-node-context-menu-search {
+    padding: 8px;
+    margin: 5px;
+    background-color: #2A2A2D; /* Node background color */
+    border: 1px solid #181818;
+    border-radius: 3px;
+    color: #DEDEDE;
+    font-size: 0.9em;
+}
+#vs-node-context-menu-search:focus {
+    outline: none;
+    border-color: #0D99FF;
+}
+
+#vs-node-context-menu-list {
+    list-style: none;
+    padding: 0 5px 5px 5px;
+    margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+#vs-node-context-menu-list li {
+    padding: 6px 10px;
+    color: #B0B0B0;
+    cursor: pointer;
+    font-size: 0.85em;
+    border-radius: 2px;
+}
+
+#vs-node-context-menu-list li:hover {
+    background-color: #0D99FF;
+    color: #FFFFFF;
+}

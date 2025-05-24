@@ -7,210 +7,264 @@ import * as THREE from 'three';
 import * as GameManager from './game-manager.js';
 import * as VisualScriptEditorManager from './ui-visual-script-editor-manager.js'; 
 import * as FileManager from './file-manager.js'; 
-import * as ProjectManager from './project-manager.js'; 
+import * as ProjectManager from './project-manager.js';
+import * as LevelDataManager from './level-data-manager.js';
+import * as ProjectStateCoordinator from './project-state-coordinator.js';
+import * as UILevelManager from './ui-level-manager.js';
+import * as ScriptComponentsManager from './ui-script-components-manager.js';
+import * as UIProjectFilesManager from './ui-project-files-manager.js';
+import * as UIModelEditorManager from './ui-model-editor-manager.js';
+import * as GltfLoaderManager from './gltf-loader-manager.js'; 
+import * as SceneSerializer from './scene-serializer.js'; 
 
 const keyStates = {};
+let gameLoopId = null;
 
-async function init() { 
+function init() {
+    // Initialize modules with early dependencies first
+    GameManager.initGameManager();
+    // ScriptEngine needs keyStates and GameManager context getter
+    ScriptEngine.initScriptEngine(keyStates, GameManager.getGameContext);
+
+    // Initialize Three.js scene and related managers
     ThreeScene.initThreeScene();
-    GameManager.initGameManager(); 
-    
-    // Initialize FileManager first - it no longer directly interacts with localStorage for projects
-    FileManager.initFileManager({ 
-        refreshScriptLists: UIManager.populateScriptFileList, // Pass the UIManager function directly
-        clearEditorForDeletedScript: (name, type) => { 
-            if (type === 'text') UIManager.handleScriptDeletedInEditor(name, 'text'); // UIManager will delegate
-            else if (type === 'visual') UIManager.handleScriptDeletedInEditor(name, 'visual'); // UIManager will delegate
-        },
-    });
+    GltfLoaderManager.initGltfLoaderManager();
 
-    // UIManager initializes its sub-modules, including UIProjectFilesManager which needs FileManager
-    UIManager.initUIManager(); 
-
-    ObjectManager.initObjectManager({
+    // Initialize managers that build the UI and handle object/project state
+    const objectManagerCallbacks = {
         populatePropertiesPanel: UIManager.populatePropertiesPanel,
         updateObjectListUI: UIManager.updateObjectListUI,
-        refreshCameraTarget: (objectName) => { 
-            if (GameManager.getIsPlaying()) {
-                const target = objectName ? ObjectManager.getSceneObjects()[objectName] : null;
-                ThreeScene.setCameraTarget(target);
+        refreshCameraTarget: (objectName) => {
+            if (GameManager.getIsPlaying() && !GameManager.getIsCameraEjected()) {
+                const sceneObjectsMap = ObjectManager.getSceneObjects();
+                ThreeScene.setCameraTarget(objectName ? sceneObjectsMap[objectName] : null);
             }
         },
         onObjectTransformedByGizmo: () => {
             UIManager.populatePropertiesPanel();
             ProjectManager.markProjectDirty();
         }
-    });
+    };
+    ObjectManager.initObjectManager(objectManagerCallbacks);
 
-    ScriptEngine.initScriptEngine(keyStates, GameManager.getGameContext); 
+    const fileManagerHooks = {
+        refreshProjectFilesList: (projectName) => {
+            if (projectName === ProjectManager.getCurrentProjectName()) {
+                UIManager.populateScriptFileList();
+            }
+        },
+        clearEditorForDeletedFile: (filePath, fileTypeKey) => {
+            UIManager.handleScriptDeletedInEditor(filePath, fileTypeKey);
+        }
+    };
+    FileManager.initFileManager(fileManagerHooks);
 
-    // Initialize ProjectManager, which now loads an empty initial project state
-    // Pass the populateScriptFileList from UIManager to ProjectManager
-    await ProjectManager.initProjectManager({
-        populateScriptFileList: UIManager.populateScriptFileList 
-    }); 
+    const projectManagerCallbacks = {
+        populateProjectFilesList: UIManager.populateScriptFileList,
+        populateLevelListUI: UIManager.populateLevelListUI,
+        updateSceneSettingsDisplay: UIManager.updateSceneSettingsDisplay,
+        updateProjectNameDisplay: (name) => {
+            DOM.currentProjectDisplay.textContent = `Project: ${name || 'Untitled'}`;
+            document.title = `Stela - ${name || 'Untitled'}`;
+        }
+    };
+    ProjectManager.initProjectManager(projectManagerCallbacks);
 
-    setupKeyboardListeners();
-    setupViewerMouseListener();
-    setupGameControls();
+    UIManager.initUIManager(); // UIManager depends on many things initialized above
 
+    // Set VS Graph context now that ScriptEngine and ObjectManager are ready
+    const activeVSGraph = VisualScriptEditorManager.getActiveVisualScriptGraph();
+    if (activeVSGraph) {
+        activeVSGraph.setContext(
+            ObjectManager.getSelectedObject(),
+            ObjectManager.getSceneObjects(),
+            keyStates,
+            GameManager.getGameContext(),
+            ScriptEngine.customConsole
+        );
+    }
+
+    setupGlobalEventListeners();
     animate();
 }
 
-function setupGameControls() {
-    DOM.playGameBtn.addEventListener('click', GameManager.startGame);
-    DOM.stopGameBtn.addEventListener('click', GameManager.stopGame);
-    DOM.ejectCameraBtn.addEventListener('click', () => {
-        if (GameManager.getIsPlaying() && !GameManager.getIsCameraEjected()) {
-            GameManager.ejectCamera();
+function setupGlobalEventListeners() {
+    window.addEventListener('keydown', (event) => {
+        keyStates[event.code.toUpperCase()] = true;
+        keyStates[event.key.toUpperCase()] = true;
+
+        // Check if focus is on the viewer area for editor controls
+        const isFocusOnViewer = DOM.viewerContainer.contains(document.activeElement);
+
+        if (!GameManager.getIsPlaying() && isFocusOnViewer) {
+            // Prevent default behavior for editor hotkeys only when viewer is focused
+            if (event.key === 'w' || event.key === 'W' ||
+                event.key === 'e' || event.key === 'E' ||
+                event.key === 'r' || event.key === 'R') {
+                event.preventDefault();
+            }
+
+            if (event.key === 'w' || event.key === 'W') {
+                DOM.gizmoTranslateBtn.click();
+            } else if (event.key === 'e' || event.key === 'E') {
+                DOM.gizmoRotateBtn.click();
+            } else if (event.key === 'r' || event.key === 'R') {
+                DOM.gizmoScaleBtn.click();
+            }
+        }
+        // Allow key inputs to propagate for scripts during play mode regardless of focus,
+        // but prevent default browser actions (like F5). Specific game actions might prevent default too.
+        if (GameManager.getIsPlaying()) {
+            // Example: prevent Space from scrolling the page if it's a game action
+            if (event.code === 'Space') {
+                // event.preventDefault(); // Decide if game key presses should prevent default
+            }
         }
     });
-}
 
-function setupViewerMouseListener() {
+    window.addEventListener('keyup', (event) => {
+        keyStates[event.code.toUpperCase()] = false;
+        keyStates[event.key.toUpperCase()] = false;
+    });
+
+    DOM.playGameBtn.addEventListener('click', GameManager.startGame);
+    DOM.stopGameBtn.addEventListener('click', GameManager.stopGame);
+    DOM.ejectCameraBtn.addEventListener('click', GameManager.ejectCamera);
+
+    ThreeScene.getTransformControls().addEventListener('mouseDown', () => {
+        // When the gizmo is clicked, if no object is currently selected, select the object the gizmo is attached to.
+        if (!ObjectManager.getSelectedObject() && ThreeScene.getTransformControls().object) {
+            ObjectManager.setSelectedObjectAndUpdateUI(ThreeScene.getTransformControls().object);
+        }
+    });
+
+    // Handle clicks in the viewport to select/deselect objects
     DOM.viewerContainer.addEventListener('mousedown', (event) => {
-        if (GameManager.getIsPlaying()) return; 
+        // Only process left clicks (button 0)
+        if (event.button !== 0) return;
+        // Don't interfere with OrbitControls drag (button 1) or TransformControls drag (button 0, handled by TransformControls)
+        // Check if OrbitControls is enabled and currently dragging
+        if (ThreeScene.getControls().enabled && ThreeScene.getControls()._isDragging) return;
+        // Check if TransformControls is currently dragging (its internal state or listeners prevent propagation)
+        if (ThreeScene.getTransformControls().dragging) return;
+        // Don't interfere if game is playing, unless specific game logic allows clicking
+        if (GameManager.getIsPlaying()) return;
 
-        const transformControls = ThreeScene.getTransformControls();
-        if (transformControls && transformControls.axis !== null && transformControls.dragging) { 
-            return; 
+        const mouse = ThreeScene.getMouse();
+        const rect = ThreeScene.getRenderer().domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        ThreeScene.getRaycaster().setFromCamera(mouse, ThreeScene.getCamera());
+        const intersectableObjects = []; // Array of objects in the scene that can be intersected
+
+        // Collect all meshes/groups added by ObjectManager into intersectableObjects
+        const sceneObjectsMap = ObjectManager.getSceneObjects();
+        for (const name in sceneObjectsMap) {
+            const obj = sceneObjectsMap[name];
+            // Recursively add objects that can be picked
+            obj.traverse(child => {
+                if (child.isMesh) { // Or check for other pickable types
+                    intersectableObjects.push(child);
+                }
+            });
         }
 
-        event.preventDefault();
-
-        const renderer = ThreeScene.getRenderer();
-        if (!renderer) return;
-
-        const viewerRect = renderer.domElement.getBoundingClientRect();
-        const mouse = new THREE.Vector2(); 
-        mouse.x = ((event.clientX - viewerRect.left) / viewerRect.width) * 2 - 1;
-        mouse.y = -((event.clientY - viewerRect.top) / viewerRect.height) * 2 + 1;
-
-        const raycaster = new THREE.Raycaster(); 
-        raycaster.setFromCamera(mouse, ThreeScene.getCamera());
-
-        const sceneObjs = ObjectManager.getSceneObjects();
-        const threeSceneObjects = Object.values(sceneObjs); 
-
-        const validThreeObjects = threeSceneObjects.filter(obj => obj instanceof THREE.Object3D);
-
-        const intersects = raycaster.intersectObjects(validThreeObjects, false);
-
+        const intersects = ThreeScene.getRaycaster().intersectObjects(intersectableObjects, true); // Set recursive to true
 
         if (intersects.length > 0) {
-            let clickedObject = intersects[0].object;
-            while(clickedObject.parent && clickedObject.parent !== ThreeScene.getScene() && sceneObjs[clickedObject.parent.name]) {
-                clickedObject = clickedObject.parent;
+            // Find the actual object from our sceneObjects map that was hit (could be a child mesh)
+            let clickedObject = null;
+            for (let i = 0; i < intersects.length; i++) {
+                let intersected = intersects[i].object;
+                // Traverse up the parent hierarchy until we find an object in our sceneObjects map
+                while (intersected) {
+                    if (ObjectManager.getSceneObjects()[intersected.name] === intersected) {
+                        clickedObject = intersected;
+                        break;
+                    }
+                    if (intersected.parent && ObjectManager.getSceneObjects()[intersected.parent.name] === intersected.parent) {
+                        clickedObject = intersected.parent;
+                        break;
+                    }
+                    intersected = intersected.parent;
+                }
+                if (clickedObject) break;
             }
-            
-            if (sceneObjs[clickedObject.name]) { 
-                 ObjectManager.setSelectedObjectAndUpdateUI(clickedObject);
-                 ProjectManager.markProjectDirty(); // Selecting an object could be considered a change
-            } else {
-                const parentInScene = findParentInSceneObjects(clickedObject, sceneObjs, ThreeScene.getScene());
-                if (parentInScene) {
-                    ObjectManager.setSelectedObjectAndUpdateUI(parentInScene);
-                    ProjectManager.markProjectDirty();
+
+            if (clickedObject) {
+                if (ObjectManager.getSelectedObject() !== clickedObject) {
+                    ObjectManager.setSelectedObjectAndUpdateUI(clickedObject);
                 } else {
+                    // Clicked the same object, maybe allow drag or other interaction
+                }
+            } else {
+                // Clicked something in the scene but not a managed object (e.g. ground, lights)
+                // Deselect if not shift-clicking
+                if (!event.shiftKey) {
                     ObjectManager.setSelectedObjectAndUpdateUI(null);
                 }
             }
         } else {
-            ObjectManager.setSelectedObjectAndUpdateUI(null);
-        }
-    }, false);
-}
-
-function findParentInSceneObjects(object, sceneObjs, scene) {
-    let current = object.parent;
-    while(current && current !== scene) {
-        if (sceneObjs[current.name]) {
-            return current;
-        }
-        current = current.parent;
-    }
-    return null;
-}
-
-function setupKeyboardListeners() {
-    window.addEventListener('keydown', (event) => {
-        // Prevent keyboard shortcuts if an input/textarea is focused, unless it's a global save (Ctrl+S)
-        const isInputFocused = event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT';
-        if (isInputFocused && !( (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') ) {
-             if (event.key === 'Enter' && event.target.closest('#properties-panel')) {
-                event.preventDefault(); 
-                event.target.blur(); // Deselect input on enter
-            }
-            return;
-        }
-        
-        keyStates[event.key.toUpperCase()] = true;
-
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-            event.preventDefault();
-            DOM.saveProjectBtn.click(); 
-        }
-        
-        if (event.key === 'Delete' && !isInputFocused) {
-            if (ObjectManager.getSelectedObject() && !GameManager.getIsPlaying()) { 
-                DOM.deleteObjectBtn.click(); 
+            // No objects intersected, click was on background
+            // Deselect if not shift-clicking
+            if (!event.shiftKey) {
+                ObjectManager.setSelectedObjectAndUpdateUI(null);
             }
         }
-
-        if (!isInputFocused && !GameManager.getIsPlaying()) { // Gizmo shortcuts only if not playing and not in input
-            if (event.key.toLowerCase() === 'w') {
-                event.preventDefault();
-                DOM.gizmoTranslateBtn.click();
-            } else if (event.key.toLowerCase() === 'e') { 
-                event.preventDefault();
-                DOM.gizmoRotateBtn.click();
-            } else if (event.key.toLowerCase() === 'r') { 
-                event.preventDefault();
-                DOM.gizmoScaleBtn.click();
-            }
-        }
-
     });
-    window.addEventListener('keyup', (event) => {
-        keyStates[event.key.toUpperCase()] = false;
-    });
+
+    window.addEventListener('resize', ThreeScene.onWindowResizeThree, false);
 }
 
 function animate() {
-    requestAnimationFrame(animate);
+    gameLoopId = requestAnimationFrame(animate);
 
-    const isPlaying = GameManager.getIsPlaying();
-    const gameContext = GameManager.getGameContext(); 
-    // const currentProjectName = ProjectManager.getCurrentProjectName(); // Not directly used in animate loop like this
+    if (GameManager.getIsPlaying()) {
+        const gameContextForVS = GameManager.getGameContext();
+        const vsGraph = VisualScriptEditorManager.getActiveVisualScriptGraph();
 
-    if (isPlaying) { 
-        ScriptEngine.executeComponentScripts(); // Project context is implicit via FileManager now
+        // Set context for VS execution managers every frame during play
+        if (vsGraph) {
+            // During play, VS executes for the *currently active level's* Visual Script,
+            // associated with *that level's* specified camera/target object (if any).
+            // The object selected in the editor UI might not be relevant for VS execution
+            // during play.
+            // We need to determine the "game object" context based on the active level's VS.
+            // For now, we'll keep it simple: VS context is the selected object in the editor,
+            // BUT VS execution manager runs ALL attached scripts on ALL objects. This needs refinement.
+            // A visual script should likely be attached to an object, like text scripts.
 
-        const activeVSGraph = VisualScriptEditorManager.getActiveVisualScriptGraph();
-        const currentOpenVSFileName = FileManager.getCurrentOpenVisualScriptName();
-        
-        // Check if the open visual script exists in the current project's loaded scripts
-        if (activeVSGraph && currentOpenVSFileName && FileManager.visualScriptExists(currentOpenVSFileName)) { 
-            activeVSGraph.setContext(
-                ObjectManager.getSelectedObject(), 
-                ObjectManager.getSceneObjects(), 
-                keyStates, 
-                gameContext, 
-                ScriptEngine.customConsole
-            );
-            activeVSGraph.executeEvent('event-start'); 
-            activeVSGraph.executeEvent('event-update'); 
-            activeVSGraph.executeEvent('event-key-input'); 
+            // TODO: Refactor VS Execution. It should likely be part of ObjectManager/GameManager loop,
+            // executing specific VS files attached to specific objects, similar to text scripts.
+            // The current VS editor's active graph is just for *editing* one file.
+            // For now, let's pass the selected object, knowing this is temporary for editor testing.
+            const selectedObj = ObjectManager.getSelectedObject(); // Using editor selection for VS context (temp)
+            vsGraph.setContext(selectedObj, ObjectManager.getSceneObjects(), keyStates, gameContextForVS, ScriptEngine.customConsole);
+
+            if (GameManager.isFirstPlayFrameTrue()) {
+                vsGraph.executeEvent('event-start'); // Trigger Start events once
+            }
+            vsGraph.executeEvent('event-update'); // Trigger Update events every frame
+            vsGraph.executeEvent('event-key-input'); // Trigger Key events every frame
         }
-        
-        if (GameManager.isFirstPlayFrameTrue()) { 
+
+        ScriptEngine.executeComponentScripts(); // Execute text scripts attached to objects
+
+        if (!GameManager.getIsCameraEjected()) {
+            ThreeScene.updateCameraFollow();
+        }
+
+        // After all game logic/scripts run, consume the first frame flag
+        if (GameManager.isFirstPlayFrameTrue()) {
             GameManager.consumeFirstPlayFrameFlag();
         }
-        ThreeScene.updateCameraFollow(); 
+
     } else {
-        ThreeScene.getControls()?.update(); 
+        // Editor mode: Only update orbit controls
+        ThreeScene.getControls().update();
     }
-    
+
     ThreeScene.renderThreeScene();
 }
 

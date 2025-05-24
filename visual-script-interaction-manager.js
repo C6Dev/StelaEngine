@@ -10,7 +10,7 @@ export class VisualScriptInteractionManager {
     constructor(graphInstance) {
         this.graph = graphInstance; 
 
-        this.selectedNodes = new Set(); // Stores IDs of selected nodes
+        this.selectedNodes = new Set(); 
         
         this.panX = 0;
         this.panY = 0;
@@ -18,18 +18,15 @@ export class VisualScriptInteractionManager {
         this.minScale = 0.2;
         this.maxScale = 3.0;
 
-        // Instantiate sub-managers
         this.viewControls = new VisualScriptViewControls(this);
         this.nodeInteraction = new VisualScriptNodeInteraction(this);
         this.connectionInteraction = new VisualScriptConnectionInteraction(this);
 
-        // Bind top-level event handlers that delegate to sub-managers
         this._onGraphWheelHandler = this.viewControls.handleGraphWheel.bind(this.viewControls);
         this._onGraphMouseDownHandler = this.viewControls.handleGraphMouseDown.bind(this.viewControls);
         this._onSvgDblClickHandler = this.connectionInteraction.handleSvgDblClick.bind(this.connectionInteraction);
-        
-        // These are the methods that VisualScriptGraph will bind to and pass to NodeDOM
-        // They are now part of the respective sub-managers
+        this._onGraphContextMenuHandler = this.viewControls._onGraphContextMenu.bind(this.viewControls); 
+
         this.boundHandleNodeMouseDown = this.nodeInteraction.handleNodeMouseDown;
         this.boundHandlePinClick = this.connectionInteraction.handlePinClick;
 
@@ -40,6 +37,7 @@ export class VisualScriptInteractionManager {
         DOM.visualScriptSvgLayer.addEventListener('dblclick', this._onSvgDblClickHandler);
         DOM.visualScriptGraphContainer.addEventListener('wheel', this._onGraphWheelHandler, { passive: false });
         DOM.visualScriptGraphContainer.addEventListener('mousedown', this._onGraphMouseDownHandler);
+        DOM.visualScriptGraphContainer.addEventListener('contextmenu', this._onGraphContextMenuHandler); 
     }
 
     // --- Methods for sub-managers to access/modify shared state ---
@@ -62,7 +60,7 @@ export class VisualScriptInteractionManager {
 
     selectNode(nodeId, additive = false) {
         if (!additive) {
-            this.selectedNodes.clear();
+            this.clearSelection(false); 
         }
         this.selectedNodes.add(nodeId);
         this.updateSelectedNodesVisuals();
@@ -83,7 +81,7 @@ export class VisualScriptInteractionManager {
         this._applyCurrentTransformToDOM();
     }
 
-    updateScale(factor, mouseX, mouseY) { // mouseX, mouseY are relative to graph container
+    updateScale(factor, mouseX, mouseY) { 
         const oldScale = this.currentScale;
         let newScale = oldScale * factor;
         newScale = Math.max(this.minScale, Math.min(this.maxScale, newScale));
@@ -92,7 +90,6 @@ export class VisualScriptInteractionManager {
 
         this.currentScale = newScale;
         
-        // Adjust pan to keep the point under the mouse stationary
         this.panX = mouseX - (mouseX - this.panX) * (newScale / oldScale);
         this.panY = mouseY - (mouseY - this.panY) * (newScale / oldScale);
         
@@ -109,11 +106,20 @@ export class VisualScriptInteractionManager {
         this.graph.redrawAllConnections();
     }
 
+    requestShowNodeContextMenu(screenClickX, screenClickY) { 
+        if (this.graph && this.graph.onContextMenuRequested) {
+            const logicalX = (screenClickX - this.panX) / this.currentScale;
+            const logicalY = (screenClickY - this.panY) / this.currentScale;
+            this.graph.onContextMenuRequested(logicalX, logicalY, screenClickX, screenClickY);
+        }
+    }
+
 
     destroy() {
         DOM.visualScriptSvgLayer.removeEventListener('dblclick', this._onSvgDblClickHandler);
         DOM.visualScriptGraphContainer.removeEventListener('wheel', this._onGraphWheelHandler);
         DOM.visualScriptGraphContainer.removeEventListener('mousedown', this._onGraphMouseDownHandler);
+        DOM.visualScriptGraphContainer.removeEventListener('contextmenu', this._onGraphContextMenuHandler); 
 
         this.viewControls.destroy();
         this.nodeInteraction.destroy();

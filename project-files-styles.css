@@ -3,7 +3,8 @@
     /* .tab-content.active styling applies */
 }
 
-#script-file-list-header {
+#script-file-list-header, 
+.script-file-type-header { 
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -11,6 +12,13 @@
     padding-bottom: 4px; 
     border-bottom: 1px solid #3A3A3A; /* Darker separator */
 }
+.script-file-type-header {
+    font-size: 0.8em;
+    color: #B0B0B0;
+    padding-left: 2px; /* Indent slightly */
+    margin-top: 8px; /* Space above type headers */
+}
+
 
 #script-file-list-header h4 {
     margin: 0;
@@ -19,7 +27,7 @@
     font-weight: 500; /* Less bold */
 }
 
-#create-new-script-btn {
+#create-new-script-btn { 
     background-color: #383838; 
     color: #DEDEDE;
     border: 1px solid #202020;
@@ -51,14 +59,19 @@
     color: #A0A0A0; 
 }
 
-#script-file-list .script-file-item span:first-of-type { 
-    margin-right: 4px;
+#script-file-list .script-file-item span.script-type-icon { 
+    margin-right: 6px; /* Increased space for emoji */
+    min-width: 20px; /* Ensure space for emoji */
+    text-align: center;
 }
 
 #script-file-list .script-file-item span:not(.script-type-icon) { 
     flex-grow: 1;
     cursor: pointer; 
     padding: 2px 0; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #script-file-list .script-file-item:hover {

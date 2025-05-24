@@ -3,17 +3,19 @@ import { VisualScriptGraph } from './visual-script-graph.js';
 import * as FileManager from './file-manager.js';
 import * as ScriptEngine from './script-engine.js'; // For console logging
 import { convertVisualScriptToStela } from './visual-script-to-stela-converter.js';
+import { NODE_TYPES } from './visual-script-node-types.js';
 
 let currentVisualScriptFileName = null;
 let visualGraphInstance = null;
+let contextMenuLogicalCoords = { x: 0, y: 0 }; // Store logical coords for node add
 
 function updateVisualScriptEditorTabName(name) {
-    DOM.currentVisualScriptNameTabSpan.textContent = name || 'Untitled';
+    DOM.currentVisualScriptNameTabSpan.textContent = name ? name.split('/').pop() : 'Untitled'; // Show only filename
 }
 
 export function updateEditorTabNameWithCurrentFile() {
-    const openFileName = FileManager.getCurrentOpenVisualScriptName();
-    updateVisualScriptEditorTabName(openFileName);
+    const openFilePath = FileManager.getCurrentOpenVisualScriptPath();
+    updateVisualScriptEditorTabName(openFilePath);
 }
 
 function handleSaveVisualScriptAsText() {
@@ -29,35 +31,110 @@ function handleSaveVisualScriptAsText() {
 
     const stelaCode = convertVisualScriptToStela(graphState);
 
-    let currentVSName = currentVisualScriptFileName || FileManager.getCurrentOpenVisualScriptName();
+    let currentVSPath = currentVisualScriptFileName || FileManager.getCurrentOpenVisualScriptPath();
     let suggestedStelaNameBase = "ConvertedScript";
-    if (currentVSName) {
-        suggestedStelaNameBase = currentVSName.replace(/\.stela-vs$/i, '').replace(/\.stela$/i, '');
+    if (currentVSPath) {
+        const currentVSFileName = currentVSPath.split('/').pop();
+        suggestedStelaNameBase = currentVSFileName.replace(/\.stela-vs$/i, '').replace(/\.stela$/i, '');
     }
     // FileManager.getUniqueScriptName will add .stela and ensure uniqueness
-    const suggestedStelaName = FileManager.getUniqueScriptName(suggestedStelaNameBase);
+    // getUniqueFilePath should be used for new files with paths
+    const suggestedStelaPath = FileManager.getUniqueFilePath(suggestedStelaNameBase, 'STELA_SCRIPT');
+    const suggestedStelaFileName = suggestedStelaPath.split('/').pop();
 
-    const newStelaScriptNamePrompt = prompt("Enter name for the converted Stela text script:", suggestedStelaName);
+    const newStelaFileNamePrompt = prompt("Enter name for the converted Stela text script:", suggestedStelaFileName);
 
-    if (!newStelaScriptNamePrompt || !newStelaScriptNamePrompt.trim()) {
+    if (!newStelaFileNamePrompt || !newStelaFileNamePrompt.trim()) {
         ScriptEngine.customConsole.log("Save as text script cancelled by user.");
         return;
     }
     
-    let finalStelaScriptName = newStelaScriptNamePrompt.trim();
-    if (!finalStelaScriptName.endsWith(".stela")) {
-        finalStelaScriptName += ".stela";
+    let finalStelaFileName = newStelaFileNamePrompt.trim();
+    if (!finalStelaFileName.endsWith(".stela")) {
+        finalStelaFileName += ".stela";
     }
     
-    // FileManager.saveScript also ensures .stela extension internally, 
-    // but having it explicitly here makes the name consistent for compilation.
-    if (FileManager.saveScript(finalStelaScriptName, stelaCode)) {
-        ScriptEngine.customConsole.log(`Visual script successfully converted and saved as text script: "${finalStelaScriptName}"`);
-        // Compile the newly saved text script immediately
-        ScriptEngine.compileScript(finalStelaScriptName, stelaCode); 
-    } else {
-        // FileManager.saveScript would have logged an error.
-        // ScriptEngine.customConsole.error(`Failed to save converted text script as "${finalStelaScriptName}".`);
+    const finalStelaPath = FileManager.getUniqueFilePath(finalStelaFileName, 'STELA_SCRIPT');
+    
+    if (FileManager.saveScript(finalStelaPath, stelaCode)) {
+        ScriptEngine.customConsole.log(`Visual script successfully converted and saved as text script: "${finalStelaPath}"`);
+        ScriptEngine.compileScript(finalStelaPath, stelaCode); 
+    }
+}
+
+function _populateContextMenuNodeList(filterText = "") {
+    DOM.vsNodeContextMenuList.innerHTML = '';
+    const lowerFilterText = filterText.toLowerCase();
+
+    Object.entries(NODE_TYPES)
+        .filter(([type, config]) => config.title.toLowerCase().includes(lowerFilterText) || type.toLowerCase().includes(lowerFilterText))
+        .sort(([, configA], [, configB]) => configA.title.localeCompare(configB.title))
+        .forEach(([type, config]) => {
+            const li = document.createElement('li');
+            li.textContent = config.title;
+            li.dataset.nodeType = type;
+            li.addEventListener('click', () => _onContextMenuNodeSelect(type));
+            DOM.vsNodeContextMenuList.appendChild(li);
+        });
+}
+
+function _onContextMenuNodeSelect(nodeType) {
+    if (visualGraphInstance && nodeType) {
+        visualGraphInstance.addNode(nodeType, contextMenuLogicalCoords.x, contextMenuLogicalCoords.y);
+    }
+    hideNodeContextMenu();
+}
+
+export function showNodeContextMenu(logicalX, logicalY, screenX, screenY) { // screenX, screenY are relative to graph container
+    contextMenuLogicalCoords = { x: logicalX, y: logicalY };
+    
+    // Position the menu based on screen coordinates
+    const graphRect = DOM.visualScriptGraphContainer.getBoundingClientRect();
+    const menuWidth = DOM.vsNodeContextMenu.offsetWidth;
+    const menuHeight = DOM.vsNodeContextMenu.offsetHeight; // Might be 0 if not yet rendered with items
+
+    let left = screenX;
+    let top = screenY;
+
+    // Adjust if menu goes off-screen (simple adjustment)
+    if (left + menuWidth > graphRect.width) {
+        left = graphRect.width - menuWidth - 5;
+    }
+    if (top + (menuHeight || 200) > graphRect.height) { // Use estimated height if needed
+        top = graphRect.height - (menuHeight || 200) - 5;
+    }
+    left = Math.max(0, left);
+    top = Math.max(0, top);
+
+
+    DOM.vsNodeContextMenu.style.left = `${left}px`;
+    DOM.vsNodeContextMenu.style.top = `${top}px`;
+    DOM.vsNodeContextMenu.style.display = 'flex'; // Use flex for column layout
+    
+    _populateContextMenuNodeList();
+    DOM.vsNodeContextMenuSearch.value = '';
+    DOM.vsNodeContextMenuSearch.focus();
+}
+
+export function hideNodeContextMenu() {
+    DOM.vsNodeContextMenu.style.display = 'none';
+}
+
+function handleContextMenuSearch() {
+    _populateContextMenuNodeList(DOM.vsNodeContextMenuSearch.value);
+}
+
+// Listener to close context menu on Escape key or click outside
+function _handleGlobalInteractionForContextMenu(event) {
+    if (DOM.vsNodeContextMenu.style.display === 'flex') {
+        if (event.key === 'Escape') {
+            hideNodeContextMenu();
+        } else if (event.type === 'mousedown') {
+            // Check if the click is outside the context menu
+            if (!DOM.vsNodeContextMenu.contains(event.target)) {
+                hideNodeContextMenu();
+            }
+        }
     }
 }
 
@@ -65,15 +142,21 @@ function setupEventListeners() {
     DOM.vsAddNodeBtn.addEventListener('click', () => {
         if (!visualGraphInstance) return;
         const selectedType = DOM.vsNodeTypeSelect.value;
+        // Get view center in logical coordinates
         const graphRect = DOM.visualScriptGraphContainer.getBoundingClientRect();
-        // Simplified positioning for new nodes
-        const x = (visualGraphInstance.nodes.length % 5) * 200 + 50; // Spread out more
-        const y = Math.floor(visualGraphInstance.nodes.length / 5) * 180 + 50; // More vertical space
-        visualGraphInstance.addNode(selectedType, x, y);
+        const centerX = (graphRect.width / 2 - visualGraphInstance.interactionManager.panX) / visualGraphInstance.interactionManager.currentScale;
+        const centerY = (graphRect.height / 2 - visualGraphInstance.interactionManager.panY) / visualGraphInstance.interactionManager.currentScale;
+        
+        visualGraphInstance.addNode(selectedType, centerX, centerY);
     });
     DOM.vsSaveAsTextBtn.addEventListener('click', handleSaveVisualScriptAsText);
 
-    // Note: Pin click and SVG double click listeners are now managed within VisualScriptGraph
+    DOM.vsNodeContextMenuSearch.addEventListener('input', handleContextMenuSearch);
+
+    // Add global listeners when the manager is initialized
+    // These will check if the menu is visible before acting.
+    document.addEventListener('keydown', _handleGlobalInteractionForContextMenu);
+    document.addEventListener('mousedown', _handleGlobalInteractionForContextMenu, true); // Use capture to catch clicks early
 }
 
 export function onTabFocus() {
@@ -84,15 +167,20 @@ export function onTabFocus() {
 
 export function initVisualScriptEditorManager() {
     visualGraphInstance = new VisualScriptGraph();
-    // Pass ScriptEngine's console to the graph for its internal logging
     if (visualGraphInstance && ScriptEngine.customConsole) {
         visualGraphInstance.setContext(null, {}, {}, null, ScriptEngine.customConsole);
     }
+
+    // Setup callback for context menu requests from the graph's interaction manager
+    visualGraphInstance.onContextMenuRequested = (logicalX, logicalY, screenClickX, screenClickY) => {
+        showNodeContextMenu(logicalX, logicalY, screenClickX, screenClickY);
+    };
+    
     setupEventListeners();
     updateEditorTabNameWithCurrentFile(); 
     
-    if (visualGraphInstance && visualGraphInstance.nodes.length === 0 && !FileManager.getCurrentOpenVisualScriptName()) {
-        visualGraphInstance.addNode('event-start', 50, 50);
+    if (visualGraphInstance && visualGraphInstance.nodes.length === 0 && !FileManager.getCurrentOpenVisualScriptPath()) {
+        // visualGraphInstance.addNode('event-start', 50, 50); // Don't add default node for cleaner start
     }
 }
 
@@ -100,10 +188,9 @@ export function loadVisualScript(name, data) {
     if (!visualGraphInstance) return;
     
     currentVisualScriptFileName = name; 
-    FileManager.setCurrentOpenVisualScriptName(name); 
+    FileManager.setCurrentOpenVisualScriptPath(name); 
     updateVisualScriptEditorTabName(name);
     visualGraphInstance.loadState(data); 
-    
 }
 
 export function saveVisualScript() {
@@ -113,24 +200,25 @@ export function saveVisualScript() {
     }
     const dataToSave = visualGraphInstance.getState();
     
-    let nameToSave = currentVisualScriptFileName || FileManager.getCurrentOpenVisualScriptName();
-    if (!nameToSave) {
+    let pathToSave = currentVisualScriptFileName || FileManager.getCurrentOpenVisualScriptPath();
+    if (!pathToSave) {
         // Prompt for base name, FileManager will add extension and ensure uniqueness
-        const baseNameSuggestion = FileManager.getUniqueVisualScriptName("MyVisualScript").replace(/\.stela-vs$/, "");
-        nameToSave = prompt("Enter visual script name (e.g., MyVisualLogic):", baseNameSuggestion);
-        if (!nameToSave || !nameToSave.trim()) {
+        const baseNameSuggestion = FileManager.getUniqueFilePath("MyVisualScript", 'VISUAL_SCRIPT').split('/').pop().replace(FileManager.FILE_TYPES.VISUAL_SCRIPT.extension, "");
+        const chosenBaseName = prompt("Enter visual script name (e.g., MyVisualLogic):", baseNameSuggestion);
+        if (!chosenBaseName || !chosenBaseName.trim()) {
             ScriptEngine.customConsole.log("Visual script save cancelled by user.");
             return null; 
         }
+        pathToSave = FileManager.getUniqueFilePath(chosenBaseName.trim(), 'VISUAL_SCRIPT');
     }
 
     // FileManager.saveVisualScript ensures the .stela-vs extension
     // and returns the final name used (which might have uniqueness numbers added)
-    if (FileManager.saveVisualScript(nameToSave, dataToSave)) { 
-        const finalName = FileManager.getCurrentOpenVisualScriptName(); // Get the name FM actually used
-        currentVisualScriptFileName = finalName; 
-        updateVisualScriptEditorTabName(finalName); 
-        return { name: finalName, data: dataToSave }; 
+    if (FileManager.saveVisualScript(pathToSave, dataToSave)) { 
+        const finalPath = FileManager.getCurrentOpenVisualScriptPath(); // Get the path FM actually used for "current open"
+        currentVisualScriptFileName = finalPath; 
+        updateVisualScriptEditorTabName(finalPath); 
+        return { name: finalPath, data: dataToSave }; 
     }
     return null; 
 }
@@ -139,22 +227,22 @@ export function clearEditor() {
     if (!visualGraphInstance) return;
     visualGraphInstance.clear();
     currentVisualScriptFileName = null;
-    FileManager.setCurrentOpenVisualScriptName(null); 
+    FileManager.setCurrentOpenVisualScriptPath(null); 
     updateVisualScriptEditorTabName(null); 
-    visualGraphInstance.addNode('event-start', 50, 50); 
+    // visualGraphInstance.addNode('event-start', 50, 50); // Don't add default node
 }
 
-export function clearEditorForNewScript(newName) {
+export function clearEditorForNewScript(newPath) { // newPath is the full path
     if (!visualGraphInstance) return;
     visualGraphInstance.clear();
-    currentVisualScriptFileName = newName; 
-    FileManager.setCurrentOpenVisualScriptName(newName); 
-    updateVisualScriptEditorTabName(newName); 
-    visualGraphInstance.addNode('event-start', 50, 50); 
+    currentVisualScriptFileName = newPath; 
+    FileManager.setCurrentOpenVisualScriptPath(newPath); 
+    updateVisualScriptEditorTabName(newPath); 
+    // visualGraphInstance.addNode('event-start', 50, 50); // Don't add default node
 }
 
-export function handleExternalVisualScriptDeletion(deletedScriptName) {
-    if (currentVisualScriptFileName === deletedScriptName || FileManager.getCurrentOpenVisualScriptName() === deletedScriptName) {
+export function handleExternalVisualScriptDeletion(deletedScriptPath) {
+    if (currentVisualScriptFileName === deletedScriptPath || FileManager.getCurrentOpenVisualScriptPath() === deletedScriptPath) {
         clearEditor(); 
     }
 }

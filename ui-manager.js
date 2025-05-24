@@ -4,6 +4,7 @@ import * as ObjectManager from './object-manager.js';
 import * as GameManager from './game-manager.js';
 import * as ThreeScene from './three-scene.js';
 import * as ProjectManager from './project-manager.js';
+import * as GltfLoaderManager from './gltf-loader-manager.js';
 
 import * as TabManager from './ui-tab-manager.js';
 import * as HierarchyPanelManager from './ui-hierarchy-panel-manager.js';
@@ -12,6 +13,8 @@ import * as ScriptEditorManager from './ui-script-editor-manager.js';
 import * as ScriptComponentsManager from './ui-script-components-manager.js';
 import * as VisualScriptEditorManager from './ui-visual-script-editor-manager.js';
 import * as UIProjectFilesManager from './ui-project-files-manager.js';
+import * as UILevelManager from './ui-level-manager.js';
+import * as UIModelEditorManager from './ui-model-editor-manager.js';
 
 export function initUIManager() {
     setupDropdowns();
@@ -24,6 +27,8 @@ export function initUIManager() {
     PropertiesPanelManager.initPropertiesPanelManager();
     ScriptEditorManager.initScriptEditorManager();
     VisualScriptEditorManager.initVisualScriptEditorManager();
+    UILevelManager.initLevelManager();
+    UIModelEditorManager.initModelEditorManager();
 }
 
 function setupDropdowns() {
@@ -32,7 +37,7 @@ function setupDropdowns() {
 
     allDropdownBtns.forEach(btn => {
         btn.addEventListener('click', (event) => {
-            if (GameManager.getIsPlaying() && btn !== DOM.fileMenuBtn) return;
+            if (GameManager.getIsPlaying() && btn !== DOM.fileMenuBtn && btn !== DOM.addObjectMenuBtn) return;
             event.stopPropagation();
             const content = btn.nextElementSibling;
             const isVisible = content.style.display === 'block';
@@ -79,6 +84,12 @@ function setupAddObjectButtons() {
         ProjectManager.markProjectDirty();
         if (DOM.addObjectDropdownContent) DOM.addObjectDropdownContent.style.display = 'none';
     });
+    DOM.addGltfBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (GameManager.getIsPlaying()) return;
+        GltfLoaderManager.initiateLoadGltfModel();
+        if (DOM.addObjectDropdownContent) DOM.addObjectDropdownContent.style.display = 'none';
+    });
 }
 
 function setupGizmoControls() {
@@ -107,8 +118,10 @@ export function setPlayModeUI(isPlaying) {
     const elementsToDisableInPlay = [
         DOM.addObjectMenuBtn, DOM.deleteObjectBtn,
         DOM.gizmoTranslateBtn, DOM.gizmoRotateBtn, DOM.gizmoScaleBtn,
+        DOM.createNewLevelBtn, 
     ];
     const panelsToFade = [DOM.leftPanel, DOM.rightPanel, DOM.bottomPanel];
+    const levelControlButtons = DOM.levelListDiv.querySelectorAll('button'); 
 
     if (isPlaying) {
         DOM.playGameBtn.style.display = 'none';
@@ -117,6 +130,7 @@ export function setPlayModeUI(isPlaying) {
         DOM.ejectCameraBtn.disabled = GameManager.getIsCameraEjected();
 
         elementsToDisableInPlay.forEach(el => el.disabled = true);
+        levelControlButtons.forEach(btn => btn.disabled = true); 
         panelsToFade.forEach(panel => {
             panel.style.pointerEvents = 'none';
             panel.style.opacity = '0.7';
@@ -133,6 +147,7 @@ export function setPlayModeUI(isPlaying) {
         DOM.ejectCameraBtn.style.display = 'none';
 
         elementsToDisableInPlay.forEach(el => el.disabled = false);
+        levelControlButtons.forEach(btn => btn.disabled = false); 
         panelsToFade.forEach(panel => {
             panel.style.pointerEvents = 'auto';
             panel.style.opacity = '1';
@@ -145,6 +160,7 @@ export function setPlayModeUI(isPlaying) {
             ThreeScene.attachTransformControls(selectedObj);
         }
         PropertiesPanelManager.populatePropertiesPanel();
+        UILevelManager.populateLevelListUI(); 
     }
 
     DOM.fileMenuBtn.disabled = false;
@@ -152,6 +168,9 @@ export function setPlayModeUI(isPlaying) {
 
 export const populatePropertiesPanel = PropertiesPanelManager.populatePropertiesPanel;
 export const updateObjectListUI = HierarchyPanelManager.updateObjectListUI;
+export const populateLevelListUI = UILevelManager.populateLevelListUI; 
+export const updateSceneSettingsDisplay = UILevelManager.updateSceneSettingsDisplay; 
+
 
 export const populateScriptFileList = () => {
     if (UIProjectFilesManager.getPopulateScriptFileListFunction) {

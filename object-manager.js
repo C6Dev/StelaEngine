@@ -4,9 +4,11 @@ import { addObjectToThreeScene, removeObjectFromThreeScene, getScene as getThree
 import { customConsole } from './script-engine.js'; 
 import * as FileManager from './file-manager.js'; 
 import * as ProjectManager from './project-manager.js';
+import * as GameManager from './game-manager.js'; 
+import * as GltfLoaderManager from './gltf-loader-manager.js'; 
 
 const sceneObjects = {};
-const objectCounters = { cube: 0, sphere: 0, cylinder: 0 };
+const objectCounters = { cube: 0, sphere: 0, cylinder: 0, model: 0 }; 
 let selectedObject = null;
 let activeCameraObjectName = null; 
 
@@ -33,6 +35,7 @@ export function resetObjectManager() {
     objectCounters.cube = 0;
     objectCounters.sphere = 0;
     objectCounters.cylinder = 0;
+    objectCounters.model = 0; 
     selectedObject = null;
     activeCameraObjectName = null;
 }
@@ -40,6 +43,7 @@ export function resetObjectManager() {
 export function getSceneObjects() { return sceneObjects; }
 export function getSelectedObject() { return selectedObject; }
 export function getActiveCameraObjectName() { return activeCameraObjectName; }
+export function getObjectCounters() { return objectCounters; }
 
 export function setActiveCameraObjectName(objectName, updateThreeSceneTarget = true) {
     const oldCameraObjectName = activeCameraObjectName;
@@ -79,6 +83,9 @@ export function addSceneObject(type) {
     switch (type) {
         case 'sphere': baseName = 'Sphere'; counterType = 'sphere'; material = defaultMaterial.clone(); material.color.setHex(0xff0077); break;
         case 'cylinder': baseName = 'Cylinder'; counterType = 'cylinder'; material = defaultMaterial.clone(); material.color.setHex(0x77ff00); break;
+        case 'gltf': 
+            GltfLoaderManager.initiateLoadGltfModel(); 
+            return null; 
         case 'cube': default: baseName = 'Cube'; counterType = 'cube'; material = defaultMaterial.clone(); material.color.setHex(0x0077ff); break;
     }
     
@@ -122,6 +129,44 @@ export function addSceneObject(type) {
     customConsole.log(`Added ${objectName} to the scene.`);
     setSelectedObjectAndUpdateUI(mesh);
     return mesh;
+}
+
+export function addGltfModelDataToScene(gltfScene, originalFileName) {
+    let baseName = originalFileName.replace(/\.(gltf|glb)$/i, '');
+    baseName = baseName.replace(/[^a-zA-Z0-9_]/g, '_');
+    if (!baseName) baseName = "ImportedModel";
+
+    let count = objectCounters.model + 1;
+    let objectName = `${baseName}${count > 1 ? count : ''}`;
+    while (sceneObjects[objectName]) {
+        count++;
+        objectName = `${baseName}${count}`;
+    }
+    objectCounters.model = count;
+
+    gltfScene.name = objectName;
+
+    const box = new THREE.Box3().setFromObject(gltfScene);
+    const center = box.getCenter(new THREE.Vector3());
+    gltfScene.position.sub(center); 
+
+    const totalSceneObjects = Object.values(sceneObjects).filter(obj => obj.parent === getThreeSceneInstance()).length;
+    const offsetX = (totalSceneObjects % 4) * 2.5 - 3.75;
+    const offsetZ = Math.floor(totalSceneObjects / 4) * -2.5;
+    gltfScene.position.add(new THREE.Vector3(offsetX, 0, offsetZ)); 
+
+    gltfScene.userData = {
+        scripts: [],
+        isImportedModel: true,
+        modelSourcePath: originalFileName 
+    };
+
+    addObjectToThreeScene(gltfScene);
+    sceneObjects[objectName] = gltfScene;
+
+    ProjectManager.markProjectDirty();
+    customConsole.log(`Loaded model "${originalFileName}" as object "${objectName}".`);
+    setSelectedObjectAndUpdateUI(gltfScene);
 }
 
 export function deleteSelectedObjectLogic() {
@@ -274,7 +319,7 @@ export function setObjectParent(childObject, newParentName) {
         return false; 
     }
 
-    newParentObject.attach(childObject); 
+    newParentObject.add(childObject); 
     ProjectManager.markProjectDirty();
     customConsole.log(`Object "${childObject.name}" parented to "${newParentObject.name}".`);
     uiUpdateCallbacks.updateObjectListUI();
@@ -349,99 +394,4 @@ export function updateScriptComponentNameOnAllObjects(oldScriptName, newScriptNa
             }
         }
     }
-}
-
-export function getSceneState() {
-    const state = {
-        objects: [],
-        activeCameraObjectName: activeCameraObjectName,
-    };
-    const mainThreeScene = getThreeSceneInstance();
-
-    for (const name in sceneObjects) {
-        const obj = sceneObjects[name];
-        const parentName = (obj.parent && obj.parent !== mainThreeScene && sceneObjects[obj.parent.name]) ? obj.parent.name : null;
-        
-        let objType = 'cube'; 
-        if (obj.geometry instanceof THREE.SphereGeometry) objType = 'sphere';
-        else if (obj.geometry instanceof THREE.CylinderGeometry) objType = 'cylinder';
-
-        state.objects.push({
-            name: obj.name,
-            type: objType, 
-            position: { x: obj.position.x, y: obj.position.y, z: obj.position.z },
-            rotation: { x: THREE.MathUtils.radToDeg(obj.rotation.x), y: THREE.MathUtils.radToDeg(obj.rotation.y), z: THREE.MathUtils.radToDeg(obj.rotation.z) },
-            scale: { x: obj.scale.x, y: obj.scale.y, z: obj.scale.z },
-            scripts: obj.userData && obj.userData.scripts ? [...obj.userData.scripts] : [],
-            parentName: parentName
-        });
-    }
-    return state;
-}
-
-export async function loadSceneState(sceneData) {
-    if (!sceneData) return;
-
-    resetObjectManager(); 
-    const mainThreeScene = getThreeSceneInstance();
-    const tempCreatedObjects = {}; 
-
-    for (const objData of sceneData.objects) {
-        let geometry, material;
-        const defaultMaterial = new THREE.MeshStandardMaterial({ metalness: 0.3, roughness: 0.6 });
-        
-        switch (objData.type) {
-            case 'sphere':
-                geometry = new THREE.SphereGeometry(1, 32, 16);
-                material = defaultMaterial.clone(); material.color.setHex(0xff0077);
-                break;
-            case 'cylinder':
-                geometry = new THREE.CylinderGeometry(0.8, 0.8, 2, 32);
-                material = defaultMaterial.clone(); material.color.setHex(0x77ff00);
-                break;
-            case 'cube':
-            default:
-                geometry = new THREE.BoxGeometry(2, 2, 2);
-                material = defaultMaterial.clone(); material.color.setHex(0x0077ff);
-                break;
-        }
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.name = objData.name;
-        mesh.position.set(objData.position.x, objData.position.y, objData.position.z);
-        mesh.rotation.set(
-            THREE.MathUtils.degToRad(objData.rotation.x),
-            THREE.MathUtils.degToRad(objData.rotation.y),
-            THREE.MathUtils.degToRad(objData.rotation.z)
-        );
-        mesh.scale.set(objData.scale.x, objData.scale.y, objData.scale.z);
-        mesh.userData = { scripts: objData.scripts ? [...objData.scripts] : [] };
-        
-        sceneObjects[mesh.name] = mesh; 
-        tempCreatedObjects[mesh.name] = mesh; 
-    }
-
-    for (const objData of sceneData.objects) {
-        const childObject = tempCreatedObjects[objData.name];
-        if (!childObject) continue;
-
-        if (objData.parentName && tempCreatedObjects[objData.parentName]) {
-            const parentObject = tempCreatedObjects[objData.parentName];
-            parentObject.add(childObject); 
-        } else {
-            addObjectToThreeScene(childObject); 
-        }
-    }
-    
-    sceneData.objects.forEach(objData => {
-        const match = objData.name.match(/^(Cube|Sphere|Cylinder)(\d+)$/);
-        if (match) {
-            const type = match[1].toLowerCase();
-            const num = parseInt(match[2]);
-            if (objectCounters[type] !== undefined) {
-                objectCounters[type] = Math.max(objectCounters[type], num);
-            }
-        }
-    });
-
-    activeCameraObjectName = sceneData.activeCameraObjectName || null;
 }

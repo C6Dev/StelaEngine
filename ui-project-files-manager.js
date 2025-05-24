@@ -1,4 +1,3 @@
-// ui-project-files-manager.js
 import * as DOM from './dom-elements.js';
 import * as FileManager from './file-manager.js';
 import * as ScriptEngine from './script-engine.js';
@@ -7,17 +6,15 @@ import * as VisualScriptEditorManager from './ui-visual-script-editor-manager.js
 import * as ObjectManager from './object-manager.js';
 import * as PropertiesPanelManager from './ui-properties-panel-manager.js';
 import * as ScriptComponentsManager from './ui-script-components-manager.js';
-// This new module will need a reference to the text script editor manager to clear its state if a script is deleted/renamed.
-// We can pass this as part of an init function or have the main script editor manager call static methods here.
-// For now, let's assume UIScriptEditorManager provides methods that this manager can call.
-let textScriptEditorInterface = { // Placeholder for Text Script Editor Manager's functions
-    loadTextScriptIntoEditor: (name, content) => {},
+import * as ProjectManager from './project-manager.js';
+
+let textScriptEditorInterface = {
+    loadTextScriptIntoEditor: (path, content, isSaved) => {},
     clearTextEditorToUntitled: () => {},
     updateTextScriptEditorTabName: (name) => {},
-    getCurrentTextScriptFileNameInEditor: () => null,
-    setCurrentTextScriptFileNameInEditor: (name) => {}
+    getCurrentTextScriptFileNameInEditor: () => null, 
+    setCurrentTextScriptFileNameInEditor: (path) => {} 
 };
-
 
 export function initUIProjectFilesManager(textEditorIntf) {
     if (textEditorIntf) {
@@ -25,74 +22,82 @@ export function initUIProjectFilesManager(textEditorIntf) {
     }
 
     setupProjectFileControls();
-    
-    FileManager.initFileManager({
-        refreshScriptLists: () => {
-            populateScriptFileList(); 
-        },
-        clearEditorForDeletedScript: (deletedScriptName) => {
-            const openTextScriptName = FileManager.getCurrentOpenScriptName(); 
-            if (textScriptEditorInterface.getCurrentTextScriptFileNameInEditor() === deletedScriptName) { 
-                textScriptEditorInterface.clearTextEditorToUntitled();
-            }
-            textScriptEditorInterface.updateTextScriptEditorTabName(openTextScriptName || 'Untitled');
-            updateScriptFileSelectionUI(openTextScriptName, 'text');
-        },
-        clearVSEditorForDeletedScript: (deletedScriptName) => {
-            VisualScriptEditorManager.handleExternalVisualScriptDeletion(deletedScriptName);
-            updateScriptFileSelectionUI(FileManager.getCurrentOpenVisualScriptName(), 'visual');
-        }
-    });
-    populateScriptFileList();
+    populateProjectFilesList();
 }
 
-function populateScriptFileList() {
-    const textScripts = FileManager.listScripts();
-    const visualScripts = FileManager.listVisualScripts();
+export function populateProjectFilesList() {
+    const allFiles = FileManager.listFiles(); 
     DOM.scriptFileListDiv.innerHTML = '';
 
-    if (textScripts.length === 0 && visualScripts.length === 0) {
-        DOM.scriptFileListDiv.textContent = "No scripts saved yet.";
+    if (allFiles.length === 0) {
+        DOM.scriptFileListDiv.textContent = "No files in this project yet.";
     } else {
-        const currentOpenTextNameViaFM = FileManager.getCurrentOpenScriptName();
-        const currentOpenVSNameViaFM = FileManager.getCurrentOpenVisualScriptName();
-
-        textScripts.forEach(name => {
-            const itemDiv = createScriptFileItemDOM(name, 'text', currentOpenTextNameViaFM, currentOpenVSNameViaFM);
-            DOM.scriptFileListDiv.appendChild(itemDiv);
+        const groupedFiles = {};
+        allFiles.forEach(path => {
+            const typeKey = FileManager.getFileTypeKeyFromPath(path) || 'UNKNOWN';
+            if (!groupedFiles[typeKey]) {
+                groupedFiles[typeKey] = [];
+            }
+            groupedFiles[typeKey].push(path);
         });
 
-        if (visualScripts.length > 0 && textScripts.length > 0) {
-            const separator = document.createElement('hr');
-            separator.style.borderColor = '#444';
-            separator.style.margin = '5px 0';
-            DOM.scriptFileListDiv.appendChild(separator);
-        }
+        const displayOrder = [ 
+            'LEVEL', 
+            'STELA_SCRIPT',
+            'VISUAL_SCRIPT',
+            'MODEL_GLTF', 
+            'MODEL_GLB',
+            'UNKNOWN' 
+        ];
+        
+        displayOrder.forEach(typeKey => {
+            if (groupedFiles[typeKey] && groupedFiles[typeKey].length > 0) {
+                if (DOM.scriptFileListDiv.children.length > 0 && 
+                   (typeKey === 'LEVEL' || typeKey === 'STELA_SCRIPT' || typeKey === 'VISUAL_SCRIPT' || typeKey === 'MODEL_GLTF' || typeKey === 'MODEL_GLB')) {
+                     const hr = document.createElement('hr');
+                     hr.className = 'project-content-separator';
+                     DOM.scriptFileListDiv.appendChild(hr);
+                } else if (DOM.scriptFileListDiv.children.length > 0 && typeKey === 'UNKNOWN') {
+                     // No separator before UNKNOWN if it's the first group, or after model types
+                }
 
-        visualScripts.forEach(name => {
-            const itemDiv = createScriptFileItemDOM(name, 'visual', currentOpenTextNameViaFM, currentOpenVSNameViaFM);
-            DOM.scriptFileListDiv.appendChild(itemDiv);
+
+                const typeHeader = document.createElement('div');
+                typeHeader.className = 'script-file-type-header';
+                typeHeader.textContent = FileManager.FILE_TYPES[typeKey]?.description || typeKey; 
+                 if (typeKey !== 'LEVEL') { 
+                     DOM.scriptFileListDiv.appendChild(typeHeader);
+                 }
+
+
+                groupedFiles[typeKey].forEach(path => {
+                    const itemDiv = createProjectFileItemDOM(path, typeKey);
+                    DOM.scriptFileListDiv.appendChild(itemDiv);
+                });
+            }
         });
     }
-    ScriptComponentsManager.populateAvailableScriptsDropdown();
-    textScriptEditorInterface.updateTextScriptEditorTabName(FileManager.getCurrentOpenScriptName() || 'Untitled');
-    VisualScriptEditorManager.updateEditorTabNameWithCurrentFile();
+    ScriptComponentsManager.populateAvailableScriptsDropdown(); 
+    textScriptEditorInterface.updateTextScriptEditorTabName(FileManager.getCurrentOpenTextScriptPath()?.split('/').pop() || 'Untitled');
+    VisualScriptEditorManager.updateEditorTabNameWithCurrentFile(); 
 }
 
-function createScriptFileItemDOM(name, type, currentOpenTextNameFM, currentOpenVSNameFM) {
+function createProjectFileItemDOM(filePath, fileTypeKey) {
     const itemDiv = document.createElement('div');
-    itemDiv.classList.add('script-file-item');
-    itemDiv.dataset.scriptName = name;
-    itemDiv.dataset.scriptType = type;
+    itemDiv.classList.add('script-file-item'); 
+    itemDiv.dataset.filePath = filePath;
+    itemDiv.dataset.fileTypeKey = fileTypeKey;
 
     const iconSpan = document.createElement('span');
-    iconSpan.classList.add('script-type-icon');
-    iconSpan.textContent = type === 'visual' ? '📊 ' : '📄 '; 
+    iconSpan.classList.add('script-type-icon'); 
+    iconSpan.textContent = FileManager.FILE_TYPES[fileTypeKey]?.emoji || '❓';
+    iconSpan.title = FileManager.FILE_TYPES[fileTypeKey]?.description || 'Unknown File';
     itemDiv.appendChild(iconSpan);
     
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = name;
-    nameSpan.addEventListener('click', () => handleOpenScript(name, type));
+    nameSpan.textContent = filePath.substring(filePath.lastIndexOf('/') + 1); 
+    nameSpan.title = filePath; 
+    nameSpan.addEventListener('click', () => handleOpenFile(filePath, fileTypeKey));
     itemDiv.appendChild(nameSpan);
 
     const controlsDiv = document.createElement('div');
@@ -100,31 +105,29 @@ function createScriptFileItemDOM(name, type, currentOpenTextNameFM, currentOpenV
 
     const renameBtn = document.createElement('button');
     renameBtn.textContent = 'Rename';
-    renameBtn.classList.add('rename-script-btn');
-    renameBtn.dataset.scriptName = name;
-    renameBtn.dataset.scriptType = type;
+    renameBtn.classList.add('rename-script-btn'); 
     controlsDiv.appendChild(renameBtn);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Delete';
-    deleteBtn.classList.add('delete-script-btn');
-    deleteBtn.dataset.scriptName = name;
-    deleteBtn.dataset.scriptType = type;
+    deleteBtn.classList.add('delete-script-btn'); 
     controlsDiv.appendChild(deleteBtn);
     
     itemDiv.appendChild(controlsDiv);
 
-    if ((type === 'text' && name === currentOpenTextNameFM) ||
-        (type === 'visual' && name === currentOpenVSNameFM)) {
-        itemDiv.classList.add('selected-script');
+    const currentOpenTextPath = FileManager.getCurrentOpenTextScriptPath();
+    const currentOpenVSPath = FileManager.getCurrentOpenVisualScriptPath();
+    if ((fileTypeKey === 'STELA_SCRIPT' && filePath === currentOpenTextPath) ||
+        (fileTypeKey === 'VISUAL_SCRIPT' && filePath === currentOpenVSPath)) {
+        itemDiv.classList.add('selected-script'); 
     }
     return itemDiv;
 }
 
-function updateScriptFileSelectionUI(selectedName, selectedType) {
+function updateFileSelectionUI(selectedPath, selectedTypeKey) {
     const items = DOM.scriptFileListDiv.querySelectorAll('.script-file-item');
     items.forEach(item => {
-        if (item.dataset.scriptName === selectedName && item.dataset.scriptType === selectedType) {
+        if (item.dataset.filePath === selectedPath && item.dataset.fileTypeKey === selectedTypeKey) {
             item.classList.add('selected-script');
         } else {
             item.classList.remove('selected-script');
@@ -132,158 +135,182 @@ function updateScriptFileSelectionUI(selectedName, selectedType) {
     });
 }
 
-export function handleNewScript(type = 'text') { 
-    if (type === 'text') {
-        const newName = FileManager.getUniqueScriptName("NewTextScript");
-        const defaultContent = `// ${newName}\nprint('${newName} created!');\n\n// Example:\n// if (key.W) {\n//   object.position.y + 0.05;\n// }`;
-        textScriptEditorInterface.loadTextScriptIntoEditor(newName, defaultContent, false); // false: don't treat as saved yet
-        // setCurrentTextScriptFileNameInEditor is called by loadTextScriptIntoEditor
-        FileManager.setCurrentOpenScriptName(newName);
-        textScriptEditorInterface.updateTextScriptEditorTabName(newName);
+export function handleNewFile(typeKey = 'STELA_SCRIPT') {
+    const fileType = FileManager.FILE_TYPES[typeKey];
+    if (!fileType) {
+        ScriptEngine.customConsole.error(`Unknown file type key: ${typeKey}`);
+        return;
+    }
+
+    let baseName = "NewFile";
+    let defaultContent = "";
+
+    if (typeKey === 'STELA_SCRIPT') {
+        baseName = "NewTextScript";
+        defaultContent = `// New Stela Script\nprint('Script created!');`;
+        const newPath = FileManager.getUniqueFilePath(baseName, typeKey);
+        textScriptEditorInterface.loadTextScriptIntoEditor(newPath, defaultContent, false);
+        FileManager.setCurrentOpenTextScriptPath(newPath);
+        textScriptEditorInterface.updateTextScriptEditorTabName(newPath.split('/').pop());
         TabManager.switchCenterTab('script');
         ScriptEngine.clearOutputMessages();
-        ScriptEngine.customConsole.log(`New text script "${newName}" ready. Save to keep changes.`);
-        updateScriptFileSelectionUI(newName, 'text');
-    } else if (type === 'visual') {
-        const newName = FileManager.getUniqueVisualScriptName("NewVisualScript");
-        VisualScriptEditorManager.clearEditorForNewScript(newName); // This sets FM's current open VS script
+        ScriptEngine.customConsole.log(`New text script "${newPath}" ready. Save to keep changes.`);
+        updateFileSelectionUI(newPath, typeKey);
+
+    } else if (typeKey === 'VISUAL_SCRIPT') {
+        baseName = "NewVisualScript";
+        const newPath = FileManager.getUniqueFilePath(baseName, typeKey);
+        VisualScriptEditorManager.clearEditorForNewScript(newPath); 
         TabManager.switchCenterTab('visual-script');
-        ScriptEngine.customConsole.log(`New visual script "${newName}" ready. Save to keep changes.`);
-        updateScriptFileSelectionUI(newName, 'visual');
+        ScriptEngine.customConsole.log(`New visual script "${newPath}" ready. Save to keep changes.`);
+        updateFileSelectionUI(newPath, typeKey);
+
+    } else if (typeKey === 'LEVEL') {
+        baseName = "NewLevel";
+        const newLevelName = prompt("Enter new level name (file name without .level):", baseName);
+        if (newLevelName && newLevelName.trim()) {
+            ProjectManager.addNewLevelFile(newLevelName.trim()); 
+        } else if (newLevelName !== null) {
+            ScriptEngine.customConsole.error("Level name cannot be empty.");
+        }
+    } else {
+        ScriptEngine.customConsole.log(`"New File" for type ${typeKey} not fully implemented yet.`);
     }
 }
 
-function handleOpenScript(scriptName, type) {
-    if (type === 'text') {
-        const content = FileManager.loadScript(scriptName); 
-        if (content !== null) {
-            textScriptEditorInterface.loadTextScriptIntoEditor(scriptName, content, true); // true: it's a saved script
+function handleOpenFile(filePath, typeKey) {
+    if (typeKey === 'STELA_SCRIPT') {
+        const content = FileManager.loadFile(filePath);
+        if (content !== undefined) {
+            textScriptEditorInterface.loadTextScriptIntoEditor(filePath, content, true);
+            FileManager.setCurrentOpenTextScriptPath(filePath);
+            TabManager.switchCenterTab('script');
+            updateFileSelectionUI(filePath, typeKey);
         } else {
-            if (textScriptEditorInterface.getCurrentTextScriptFileNameInEditor() === scriptName || FileManager.getCurrentOpenScriptName() === scriptName) {
+            if (FileManager.getCurrentOpenTextScriptPath() === filePath) {
                  textScriptEditorInterface.clearTextEditorToUntitled();
-                 FileManager.setCurrentOpenScriptName(null); 
-                 updateScriptFileSelectionUI(null, null);
+                 FileManager.setCurrentOpenTextScriptPath(null);
+                 updateFileSelectionUI(null, null);
             }
         }
-    } else if (type === 'visual') {
-        const data = FileManager.loadVisualScript(scriptName); 
-        if (data !== null) {
-            VisualScriptEditorManager.loadVisualScript(scriptName, data);
+    } else if (typeKey === 'VISUAL_SCRIPT') {
+        const data = FileManager.loadFile(filePath);
+        if (data !== undefined) {
+            VisualScriptEditorManager.loadVisualScript(filePath, data); 
+            FileManager.setCurrentOpenVisualScriptPath(filePath);
             TabManager.switchCenterTab('visual-script');
-            updateScriptFileSelectionUI(scriptName, 'visual');
+            updateFileSelectionUI(filePath, typeKey);
         } else {
-            if (FileManager.getCurrentOpenVisualScriptName() === scriptName) {
-                VisualScriptEditorManager.clearEditor(); 
-                updateScriptFileSelectionUI(null, null);
+            if (FileManager.getCurrentOpenVisualScriptPath() === filePath) {
+                VisualScriptEditorManager.clearEditor();
+                FileManager.setCurrentOpenVisualScriptPath(null);
+                updateFileSelectionUI(null, null);
             }
         }
+    } else if (typeKey === 'LEVEL') {
+        ProjectManager.switchActiveLevelByPath(filePath);
+    } else {
+        ScriptEngine.customConsole.log(`"Open File" for type ${typeKey} not implemented yet.`);
     }
 }
 
-function handleDeleteScript(name, type) {
-     if (!name || !confirm(`Are you sure you want to delete ${type} script "${name}"? This cannot be undone.`)) {
+function handleDeleteFile(filePath, typeKey) {
+    const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+    if (!filePath || !confirm(`Are you sure you want to delete ${FileManager.FILE_TYPES[typeKey]?.description || 'file'} "${fileName}"? This cannot be undone.`)) {
         return;
     }
 
     let success = false;
-    if (type === 'text') {
-        success = FileManager.deleteScript(name); // FileManager hooks will update UI
-    } else if (type === 'visual') {
-        success = FileManager.deleteVisualScript(name); // FileManager hooks will update UI
+    if (typeKey === 'LEVEL') {
+        success = ProjectManager.deleteLevelByPath(filePath);
+    } else {
+        success = FileManager.deleteFile(filePath); 
     }
 
     if (success) {
-        ObjectManager.removeScriptComponentFromAllObjects(name); 
-        ScriptEngine.customConsole.log(`${type === 'text' ? "Text" : "Visual"} script "${name}" and its components removed.`);
-        if (ObjectManager.getSelectedObject()) {
+        if (typeKey === 'STELA_SCRIPT' || typeKey === 'VISUAL_SCRIPT') {
+            ObjectManager.removeScriptComponentFromAllObjects(filePath); 
+        }
+        ScriptEngine.customConsole.log(`${FileManager.FILE_TYPES[typeKey]?.description || 'File'} "${fileName}" and its components (if applicable) removed.`);
+        if (ObjectManager.getSelectedObject()) { 
             PropertiesPanelManager.populatePropertiesPanel();
         }
     } else {
-        ScriptEngine.customConsole.error(`Failed to delete ${type} script "${name}".`);
+        ScriptEngine.customConsole.error(`Failed to delete ${FileManager.FILE_TYPES[typeKey]?.description || 'file'} "${fileName}".`);
     }
 }
 
-function handleRenameScript(oldName, type) {
-    if (!oldName) return;
+function handleRenameFile(oldFilePath, typeKey) {
+    if (!oldFilePath) return;
+    const oldFileName = oldFilePath.substring(oldFilePath.lastIndexOf('/') + 1);
+    const oldBaseName = oldFileName.replace(FileManager.FILE_TYPES[typeKey]?.extension || '', '');
 
-    const newNamePrompt = prompt(`Enter new name for ${type} script "${oldName}":`, oldName.replace(/\.stela(-vs)?$/, ''));
-    if (!newNamePrompt || !newNamePrompt.trim() || newNamePrompt.trim() === oldName.replace(/\.stela(-vs)?$/, '')) {
+    const newBaseNamePrompt = prompt(`Enter new base name for ${FileManager.FILE_TYPES[typeKey]?.description || 'file'} "${oldFileName}":`, oldBaseName);
+    if (!newBaseNamePrompt || !newBaseNamePrompt.trim() || newBaseNamePrompt.trim() === oldBaseName) {
         ScriptEngine.customConsole.log("Rename cancelled or name unchanged.");
         return;
     }
     
-    let newFullName = newNamePrompt.trim();
+    const oldDir = oldFilePath.substring(0, oldFilePath.lastIndexOf('/') + 1);
+    const newFileName = newBaseNamePrompt.trim() + (FileManager.FILE_TYPES[typeKey]?.extension || '');
+    const newFilePath = oldDir + newFileName;
 
     let success = false;
-    let finalNewName = "";
-    if (type === 'text') {
-        success = FileManager.renameScript(oldName, newFullName); // FM handles extension
-        if (success) {
-            finalNewName = newFullName.endsWith(".stela") ? newFullName : newFullName + ".stela";
-            if (textScriptEditorInterface.getCurrentTextScriptFileNameInEditor() === oldName) {
-                textScriptEditorInterface.setCurrentTextScriptFileNameInEditor(finalNewName);
-                // Tab name update happens via FileManager hook -> populateScriptFileList -> updateTextScriptEditorTabName
-            }
-        }
-    } else if (type === 'visual') {
-        success = FileManager.renameVisualScript(oldName, newFullName); // FM handles extension
-         if (success) {
-            finalNewName = newFullName.endsWith(".stela-vs") ? newFullName : newFullName + ".stela-vs";
-            // VS Editor's current file name and tab name update happens via FileManager hook
-            // via setCurrentOpenVisualScriptName if it was the open one.
-        }
+    if (typeKey === 'LEVEL') {
+        success = ProjectManager.renameLevelByPath(oldFilePath, newFilePath);
+    } else {
+        success = FileManager.renameFile(oldFilePath, newFilePath);
     }
 
     if (success) {
-        ObjectManager.updateScriptComponentNameOnAllObjects(oldName, finalNewName);
-        ScriptEngine.customConsole.log(`${type} script "${oldName}" renamed to "${finalNewName}".`);
+        if (typeKey === 'STELA_SCRIPT' || typeKey === 'VISUAL_SCRIPT') {
+            ObjectManager.updateScriptComponentNameOnAllObjects(oldFilePath, newFilePath); 
+        }
+        ScriptEngine.customConsole.log(`${FileManager.FILE_TYPES[typeKey]?.description || 'File'} "${oldFileName}" renamed to "${newFileName}".`);
         if (ObjectManager.getSelectedObject()) {
             PropertiesPanelManager.populatePropertiesPanel();
         }
-        // File list and editor tabs are updated by FileManager hooks -> populateScriptFileList
     }
 }
 
 function setupProjectFileControls() {
     DOM.createNewScriptBtn.addEventListener('click', () => {
-        const type = prompt("Create new script: 'text' or 'visual'?", "text")?.toLowerCase();
-        if (type === 'text' || type === 'visual') {
-            handleNewScript(type);
-        } else if (type !== null) {
-            alert("Invalid script type. Please enter 'text' or 'visual'.");
+        const typeInput = prompt("Create new file: 'text', 'visual', or 'level'?", "text")?.toLowerCase();
+        if (typeInput === 'text') handleNewFile('STELA_SCRIPT');
+        else if (typeInput === 'visual') handleNewFile('VISUAL_SCRIPT');
+        else if (typeInput === 'level') handleNewFile('LEVEL');
+        else if (typeInput !== null) {
+            alert("Invalid file type. Please enter 'text', 'visual', or 'level'.");
         }
     });
 
     DOM.scriptFileListDiv.addEventListener('click', (event) => {
-        const target = event.target.closest('button');
-        if (!target) return;
+        const targetButton = event.target.closest('button');
+        if (!targetButton) return;
 
-        const scriptItemDiv = target.closest('.script-file-item');
+        const scriptItemDiv = targetButton.closest('.script-file-item');
         if (!scriptItemDiv) return;
 
-        const scriptName = scriptItemDiv.dataset.scriptName;
-        const scriptType = scriptItemDiv.dataset.scriptType;
+        const filePath = scriptItemDiv.dataset.filePath;
+        const fileTypeKey = scriptItemDiv.dataset.fileTypeKey;
 
-        if (target.classList.contains('delete-script-btn')) {
-            handleDeleteScript(scriptName, scriptType);
-        } else if (target.classList.contains('rename-script-btn')) {
-            handleRenameScript(scriptName, scriptType);
+        if (targetButton.classList.contains('delete-script-btn')) {
+            handleDeleteFile(filePath, fileTypeKey);
+        } else if (targetButton.classList.contains('rename-script-btn')) {
+            handleRenameFile(filePath, fileTypeKey);
         }
     });
 }
 
-// This function is called by UIScriptEditorManager if a script is deleted by external means (not through UI)
-// though typically deletion should go through UIProjectFilesManager.
-export function handleExternalScriptDeletion(scriptName, scriptType) {
-    if (scriptType === 'text' && (textScriptEditorInterface.getCurrentTextScriptFileNameInEditor() === scriptName || FileManager.getCurrentOpenScriptName() === scriptName)) {
+export function handleExternalFileDeletion(filePath, fileTypeKey) {
+    if (fileTypeKey === 'STELA_SCRIPT' && FileManager.getCurrentOpenTextScriptPath() === filePath) {
         textScriptEditorInterface.clearTextEditorToUntitled();
-    } else if (scriptType === 'visual' && FileManager.getCurrentOpenVisualScriptName() === scriptName) {
+    } else if (fileTypeKey === 'VISUAL_SCRIPT' && FileManager.getCurrentOpenVisualScriptPath() === filePath) {
         VisualScriptEditorManager.clearEditor();
     }
-    populateScriptFileList(); // Refresh the list, which also updates tabs
+    populateProjectFilesList();
 }
 
-// Getter for other modules if needed
-export function getPopulateScriptFileListFunction() {
-    return populateScriptFileList;
+export function getPopulateProjectFilesListFunction() {
+    return populateProjectFilesList;
 }
