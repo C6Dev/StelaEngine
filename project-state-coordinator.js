@@ -12,7 +12,6 @@ import * as SceneSerializer from './scene-serializer.js';
 
 let _uiCallbacksPSC = {
     populateProjectFilesList: () => {},
-    populateLevelListUI: () => {},
     updateSceneSettingsDisplay: () => {},
     updateProjectNameDisplay: () => {}
 };
@@ -24,27 +23,35 @@ export function initProjectStateCoordinator(uiCallbacks) {
 }
 
 export function saveCurrentSceneToActiveLevel() {
-    const activeLevelContent = LevelDataManager.getActiveLevelFileContent();
-    if (activeLevelContent) {
-        const currentSceneData = SceneSerializer.getSceneState();
+    const activeLevelPath = LevelDataManager.getActiveLevelPath();
+    if (activeLevelPath) {
+        let activeLevelContent = LevelDataManager.getActiveLevelFileContent(); 
+        if (!activeLevelContent) { 
+            ScriptEngine.customConsole.warn(`saveCurrentSceneToActiveLevel: Could not load content for active level path ${activeLevelPath}. Creating new default content.`);
+            activeLevelContent = LevelDataManager.createNewLevelFileContent(activeLevelPath.split('/').pop().replace(FileManager.FILE_TYPES.LEVEL.extension, ''));
+        }
+        
+        const currentSceneData = SceneSerializer.getSceneState(); 
         currentSceneData.sceneBackgroundColor = ThreeScene.getBackgroundColor();
         activeLevelContent.sceneData = currentSceneData;
-        LevelDataManager.updateActiveLevelFileContent(activeLevelContent);
+        FileManager.saveFile(activeLevelPath, activeLevelContent); 
+    } else {
+        ScriptEngine.customConsole.warn("saveCurrentSceneToActiveLevel: No active level path set.");
     }
 }
 
 export function gatherCurrentProjectData(currentProjectName) {
-    saveCurrentSceneToActiveLevel();
+    saveCurrentSceneToActiveLevel(); 
 
-    const allFiles = FileManager.getAllProjectFiles();
+    const allFilesSerializable = FileManager.getAllProjectFilesSerializable(); 
     const editorCamera = ThreeScene.getCamera();
     const editorControlsTarget = ThreeScene.getControls().target;
 
     return {
         projectName: currentProjectName,
-        projectFileVersion: "1.2",
+        projectFileVersion: "1.3", 
         activeLevelPath: LevelDataManager.getActiveLevelPath(),
-        files: allFiles,
+        files: allFilesSerializable, 
         editorState: {
             openTextScriptPath: FileManager.getCurrentOpenTextScriptPath(),
             openVisualScriptPath: FileManager.getCurrentOpenVisualScriptPath(),
@@ -56,22 +63,29 @@ export function gatherCurrentProjectData(currentProjectName) {
 
 export async function applyProjectData(projectData, isNewProject) {
     ScriptEngine.clearOutputMessages();
-    ThreeScene.clearSceneContent();
+    ThreeScene.clearSceneContent(); 
+    ObjectManager.resetObjectManager(); 
 
-    FileManager.loadAllProjectFiles(projectData.files);
+    FileManager.loadAllProjectFiles(projectData.files); 
     LevelDataManager.loadLevelManifest(projectData.files, projectData.activeLevelPath);
 
-    const activeLevelToLoadContent = LevelDataManager.getActiveLevelFileContent();
-
+    const activeLevelToLoadPath = LevelDataManager.getActiveLevelPath();
+    let activeLevelToLoadContent = null;
+    if (activeLevelToLoadPath) {
+        activeLevelToLoadContent = LevelDataManager.getActiveLevelFileContent(); 
+    }
+    
     if (activeLevelToLoadContent && activeLevelToLoadContent.sceneData) {
         ThreeScene.setBackgroundColor(activeLevelToLoadContent.sceneData.sceneBackgroundColor || '#000000');
         await SceneSerializer.loadSceneState(activeLevelToLoadContent.sceneData);
     } else {
         ThreeScene.setBackgroundColor('#000000');
-        const defaultScene = { objects: [], activeCameraObjectName: null, sceneBackgroundColor: '#000000' };
+        const defaultScene = LevelDataManager.createNewLevelFileContent("Default").sceneData;
         await SceneSerializer.loadSceneState(defaultScene);
         if (LevelDataManager.getLevelsCount() === 0 && !isNewProject) {
             ScriptEngine.customConsole.warn("Loaded project has no levels. Consider creating a new project or checking the file.");
+        } else if (!activeLevelToLoadContent && activeLevelToLoadPath) {
+            ScriptEngine.customConsole.error(`Could not load content for active level: ${activeLevelToLoadPath}. Loaded default scene.`);
         }
     }
 
@@ -86,8 +100,9 @@ export async function applyProjectData(projectData, isNewProject) {
     }
 
     const openTextScriptPath = projectData.editorState?.openTextScriptPath;
-    if (openTextScriptPath && projectData.files && projectData.files[openTextScriptPath]) {
-        UIScriptEditorManager.loadTextScriptIntoEditor(openTextScriptPath, projectData.files[openTextScriptPath]);
+    const textScriptContent = openTextScriptPath ? FileManager.loadFile(openTextScriptPath) : null;
+    if (openTextScriptPath && textScriptContent !== undefined) {
+        UIScriptEditorManager.loadTextScriptIntoEditor(openTextScriptPath, textScriptContent);
         FileManager.setCurrentOpenTextScriptPath(openTextScriptPath);
     } else {
         UIScriptEditorManager.clearTextEditorToUntitled();
@@ -95,19 +110,19 @@ export async function applyProjectData(projectData, isNewProject) {
     }
 
     const openVScriptPath = projectData.editorState?.openVisualScriptPath;
-    if (openVScriptPath && projectData.files && projectData.files[openVScriptPath]) {
-        UIVisualScriptEditorManager.loadVisualScript(openVScriptPath, projectData.files[openVScriptPath]);
+    const vsScriptData = openVScriptPath ? FileManager.loadFile(openVScriptPath) : null; 
+    if (openVScriptPath && vsScriptData !== undefined) {
+        UIVisualScriptEditorManager.loadVisualScript(openVScriptPath, vsScriptData);
         FileManager.setCurrentOpenVisualScriptPath(openVScriptPath);
     } else {
         UIVisualScriptEditorManager.clearEditor();
         FileManager.setCurrentOpenVisualScriptPath(null);
     }
     
-    if (_uiCallbacksPSC.updateProjectNameDisplay) _uiCallbacksPSC.updateProjectNameDisplay();
+    if (_uiCallbacksPSC.updateProjectNameDisplay) _uiCallbacksPSC.updateProjectNameDisplay(projectData.projectName || ProjectManager.getCurrentProjectName());
     if (UIManager.updateObjectListUI) UIManager.updateObjectListUI();
     if (UIManager.populatePropertiesPanel) UIManager.populatePropertiesPanel();
     if (_uiCallbacksPSC.populateProjectFilesList) _uiCallbacksPSC.populateProjectFilesList();
-    if (_uiCallbacksPSC.populateLevelListUI) _uiCallbacksPSC.populateLevelListUI();
     if (_uiCallbacksPSC.updateSceneSettingsDisplay) _uiCallbacksPSC.updateSceneSettingsDisplay();
     if (ScriptComponentsManager.populateAvailableScriptsDropdown) ScriptComponentsManager.populateAvailableScriptsDropdown();
 

@@ -1,15 +1,16 @@
 import * as DOM from './dom-elements.js';
-import * as ObjectManager from './object-manager.js';
+import * as ObjectScriptingService from './object-scripting-service.js';
 import * as ScriptEngine from './script-engine.js';
 import * as FileManager from './file-manager.js';
+import * as UIManager from './ui-manager.js';
 
 export function setupScriptComponentControls() {
     DOM.addScriptComponentBtn.addEventListener('click', () => {
-        const selectedObject = ObjectManager.getSelectedObject();
+        const selectedObject = UIManager.getSelectedObject();
         const scriptName = DOM.availableScriptsDropdown.value;
         if (selectedObject && scriptName) {
-            ObjectManager.addScriptComponentToObject(selectedObject, scriptName);
-            // populatePropertiesPanel() will be called by addScriptComponentToObject's callback
+            ObjectScriptingService.addScriptComponentToObject(selectedObject, scriptName);
+            // populatePropertiesPanel() will be called by the service or its chain
         } else if (!selectedObject) {
             ScriptEngine.customConsole.error("No object selected to add script to.");
         } else if (!scriptName) {
@@ -17,30 +18,32 @@ export function setupScriptComponentControls() {
         }
     });
 
-    // Listener for script component list (for remove buttons)
     DOM.scriptComponentListDiv.addEventListener('click', (event) => {
         if (event.target.classList.contains('remove-script-component-btn')) {
             const scriptName = event.target.dataset.scriptName;
-            const selectedObject = ObjectManager.getSelectedObject();
+            const selectedObject = UIManager.getSelectedObject();
             if (selectedObject && scriptName) {
-                ObjectManager.removeScriptComponentFromObject(selectedObject, scriptName);
-                 // populatePropertiesPanel() will be called by removeScriptComponentFromObject's callback
+                ObjectScriptingService.removeScriptComponentFromObject(selectedObject, scriptName);
+                // populatePropertiesPanel() will be called by the service or its chain
             }
         }
     });
 }
 
 export function populateAvailableScriptsDropdown() {
-    const scripts = FileManager.listScripts();
+    const stelaScripts = FileManager.listScripts();
+    const visualScripts = FileManager.listVisualScripts();
+    const allScripts = [...stelaScripts, ...visualScripts].sort();
+
     DOM.availableScriptsDropdown.innerHTML = '';
-    if (scripts.length === 0) {
+    if (allScripts.length === 0) {
         const option = document.createElement('option');
         option.value = "";
         option.textContent = "No scripts available";
         DOM.availableScriptsDropdown.appendChild(option);
         DOM.addScriptComponentBtn.disabled = true;
     } else {
-        scripts.forEach(scriptName => {
+        allScripts.forEach(scriptName => {
             const option = document.createElement('option');
             option.value = scriptName;
             option.textContent = scriptName;
@@ -74,8 +77,7 @@ export function populateScriptComponentListUI(selectedObject) {
     }
 }
 
-
 export function initScriptComponentsManager() {
     setupScriptComponentControls();
-    populateAvailableScriptsDropdown(); // Initial population
+    populateAvailableScriptsDropdown(); 
 }

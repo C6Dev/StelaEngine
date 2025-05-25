@@ -18,8 +18,8 @@ export function getIsPlaying() {
     return isPlaying;
 }
 
-export function getIsCameraEjected() { 
-    return isCameraEjected; 
+export function getIsCameraEjected() {
+    return isCameraEjected;
 }
 
 export function startGame() {
@@ -50,7 +50,7 @@ export function startGame() {
         near: mainCamera.near,
         far: mainCamera.far
     };
-    
+
     // If no specific camera object is set, the main camera is free (or script-controlled)
     // OrbitControls must be disabled.
     ThreeScene.getControls().enabled = false;
@@ -73,7 +73,7 @@ export function stopGame() {
     isPlaying = false;
     isCameraEjected = false; // Reset camera eject state on game stop
     // firstPlayFrame will be true again when startGame is called next.
-    
+
     const sceneObjectsMap = ObjectManager.getSceneObjects();
     for (const name in sceneObjectsMap) {
         const obj = sceneObjectsMap[name];
@@ -95,10 +95,10 @@ export function stopGame() {
         mainCamera.far = initialCameraState.far;
         mainCamera.updateProjectionMatrix();
     }
-    
+
     ThreeScene.setCameraTarget(null); // Detach camera from any object on stop
     // OrbitControls state was saved, now we restore it and enable.
-    ThreeScene.getControls().reset(); 
+    ThreeScene.getControls().reset();
     ThreeScene.getControls().enabled = true;
 
     const currentSelectedObject = ObjectManager.getSelectedObject();
@@ -109,6 +109,7 @@ export function stopGame() {
     UIManager.setPlayModeUI(false);
     UIManager.populatePropertiesPanel(); // Refresh properties
     UIManager.updateObjectListUI();    // Refresh hierarchy
+    UIManager.populateProjectFilesList(); // Refresh project files including level active status and thumbnails
 
     // ObjectManager.setActiveCameraObjectName(null, false); // Reset internal tracking without telling ThreeScene again
                                                        // This is implicitly handled by populatePropertiesPanel re-evaluating.
@@ -123,7 +124,7 @@ export function ejectCamera() {
     ThreeScene.setCameraTarget(null);       // Detach from any game object
     ThreeScene.getControls().enabled = true; // Re-enable orbit controls
     // Optional: If you want the camera to snap to a default "editor" view upon eject:
-    // ThreeScene.getControls().reset(); 
+    // ThreeScene.getControls().reset();
     UIManager.setPlayModeUI(true); // Re-call to update button states (e.g., disable eject button)
     ScriptEngine.customConsole.log("Camera Ejected. Orbit controls active. Game continues.");
 }
@@ -136,11 +137,11 @@ export function getGameContext() {
     };
 }
 
-export function isFirstPlayFrameTrue() { 
+export function isFirstPlayFrameTrue() {
     return isPlaying && firstPlayFrame;
 }
 
-export function consumeFirstPlayFrameFlag() { 
+export function consumeFirstPlayFrameFlag() {
     if (firstPlayFrame) {
         firstPlayFrame = false;
     }

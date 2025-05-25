@@ -56,9 +56,9 @@ export const saveScriptBtn = document.getElementById('save-script-btn');
 
 // Visual Script Editor Elements
 export const visualScriptEditorContent = document.getElementById('visual-script-editor-content'); 
-export const vsAddNodeBtn = document.getElementById('vs-add-node-btn');
-export const vsNodeTypeSelect = document.getElementById('vs-node-type-select');
 export const vsSaveAsTextBtn = document.getElementById('vs-save-as-text-btn'); 
+export const vsSaveBtn = document.getElementById('vs-save-btn'); 
+export const vsClearBtn = document.getElementById('vs-clear-btn'); 
 export const visualScriptGraphContainer = document.getElementById('visual-script-graph-container');
 export const visualScriptSvgLayer = document.getElementById('visual-script-svg-layer');
 export const visualScriptNodesContainer = document.getElementById('visual-script-nodes-container');
@@ -101,6 +101,7 @@ export const clearActiveCameraBtn = document.getElementById('clear-active-camera
 // Scene Settings in Properties Panel
 export const sceneSettingsGroup = document.getElementById('scene-settings-group');
 export const propBgColorInput = document.getElementById('prop-bg-color');
+export const activeLevelDisplayProperties = document.getElementById('active-level-display-properties'); 
 
 // Script Components in Properties Panel
 export const objectScriptsGroup = document.getElementById('object-scripts-group');
@@ -116,16 +117,9 @@ export const consoleTabBtn = document.getElementById('console-tab-btn');
 export const bottomContent = document.getElementById('bottom-content');
 export const projectContent = document.getElementById('project-content');
 
-// Level Management in Project Content
-export const levelManagementHeader = document.getElementById('level-management-header');
-export const activeLevelDisplay = document.getElementById('active-level-display');
-export const createNewLevelBtn = document.getElementById('create-new-level-btn');
-export const levelListDiv = document.getElementById('level-list');
-
-// Script Files in Project Content
-export const scriptFileListHeader = document.getElementById('script-file-list-header');
-export const createNewScriptBtn = document.getElementById('create-new-script-btn');
-export const scriptFileListDiv = document.getElementById('script-file-list');
+// Project Files List in Project Content
+export const createNewFileBtn = document.getElementById('create-new-file-btn'); 
+export const projectFileListDiv = document.getElementById('project-file-list'); 
 
 export const consoleContent = document.getElementById('console-content');
 export const scriptOutputLabel = document.getElementById('script-output-label'); 

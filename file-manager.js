@@ -1,5 +1,5 @@
 // Stela File Manager (project-aware, using local files via ProjectManager)
-import * as ScriptEngine from './script-engine.js';
+import * as ScriptEngine from './script-engine.js'; // Still needed for compile/remove calls
 import * as ProjectManager from './project-manager.js'; // For marking dirty
 
 let currentProjectNameForFileManager = null;
@@ -24,9 +24,47 @@ let uiUpdateHooks = {
     clearEditorForDeletedFile: (filePath, fileTypeKey) => {},
 };
 
-export function initFileManager(hooks) {
+// Hold the customConsole reference
+let _customConsole = console; // Default to standard console
+
+// --- Helper functions for Base64 <-> ArrayBuffer ---
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    try {
+        return window.btoa(binary);
+    } catch (e) {
+        _customConsole.error("Failed to convert ArrayBuffer to Base64:", e);
+        return null; // Or handle error appropriately
+    }
+}
+
+function base64ToArrayBuffer(base64) {
+    try {
+        const binary_string = window.atob(base64);
+        const len = binary_string.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i);
+        }
+        return bytes.buffer;
+    } catch (e) {
+        _customConsole.error("Failed to convert Base64 to ArrayBuffer:", e);
+        return null; // Or handle error appropriately
+    }
+}
+
+// Modify initFileManager to accept customConsole
+export function initFileManager(hooks, customConsoleRef) {
     if (hooks) {
         uiUpdateHooks = {...uiUpdateHooks, ...hooks};
+    }
+    if (customConsoleRef) {
+        _customConsole = customConsoleRef; // Use the provided customConsole
     }
 }
 
@@ -38,36 +76,42 @@ export function setCurrentProjectName(name) {
 
 export function saveFile(filePath, content) {
     if (!currentProjectNameForFileManager) {
-        ScriptEngine.customConsole.error("Cannot save file: No active project context.");
+        _customConsole.error("Cannot save file: No active project context.");
         return false;
     }
     if (!filePath || !filePath.trim()) {
-        ScriptEngine.customConsole.error("File path cannot be empty.");
+        _customConsole.error("File path cannot be empty.");
         return false;
     }
     
-    // Ensure content is serializable for JSON (needed for ProjectData)
-    // For JSON file types (.level, .stela-vs), stringify before storing
-    // For text files (.stela), store as is.
-    // For binary files (models, audio), store as ArrayBuffer/Blob.
     let serializableContent = content;
     const fileTypeKey = getFileTypeKeyFromPath(filePath);
 
     if (fileTypeKey === 'VISUAL_SCRIPT' || fileTypeKey === 'LEVEL') {
-         if (typeof content !== 'string') {
+         if (typeof content !== 'string') { // If it's an object, stringify
              try {
                  serializableContent = JSON.stringify(content, null, 2);
              } catch (e) {
-                 ScriptEngine.customConsole.error(`Cannot save file "${filePath}": Content is not a string and failed to serialize to JSON. ${e.message}`);
+                 _customConsole.error(`Cannot save file "${filePath}": Content is not a string and failed to serialize to JSON. ${e.message}`);
                  return false;
              }
-         } // If content is already a string, assume it's pre-stringified JSON (e.g. loaded GLTF)
-    } else if (typeof content !== 'string') {
-        // Handle other non-string types like ArrayBuffer for models if needed
-        // For now, just check if it's a simple string for text files.
-        if (!(content instanceof ArrayBuffer) && !(content instanceof Blob)) {
-             ScriptEngine.customConsole.warn(`Saving non-string, non-ArrayBuffer content for file type ${fileTypeKey}: "${filePath}". Content might not be saved correctly.`);
+         } // If content is already a string, assume it's pre-stringified JSON
+    } else if (fileTypeKey === 'MODEL_GLTF') { // GLTF is text-based JSON
+        if (typeof content !== 'string') {
+            _customConsole.error(`Cannot save GLTF file "${filePath}": Content is not a string.`);
+            return false;
         }
+        serializableContent = content; // Store as string
+    } else if (fileTypeKey === 'MODEL_GLB') { // GLB is binary
+        if (!(content instanceof ArrayBuffer)) {
+            _customConsole.error(`Cannot save GLB file "${filePath}": Content is not an ArrayBuffer.`);
+            return false;
+        }
+        serializableContent = content; // Store ArrayBuffer directly
+    } else if (typeof content !== 'string') {
+        // For STELA_SCRIPT, or other unknown types expecting string
+        _customConsole.error(`Cannot save file "${filePath}" (type ${fileTypeKey}): Content is not a string.`);
+        return false;
     }
 
     projectFilesData[filePath] = serializableContent;
@@ -77,29 +121,36 @@ export function saveFile(filePath, content) {
 }
 
 export function loadFile(filePath) {
-    if (!currentProjectNameForFileManager) return undefined; // Use undefined for not found
+    if (!currentProjectNameForFileManager) return undefined; 
     const content = projectFilesData[filePath];
     if (content === undefined) return undefined;
 
     const fileTypeKey = getFileTypeKeyFromPath(filePath);
 
     if (fileTypeKey === 'VISUAL_SCRIPT' || fileTypeKey === 'LEVEL') {
-        // Always parse JSON for these types and return a deep copy
         if (typeof content !== 'string') {
-             ScriptEngine.customConsole.error(`Cannot load ${fileTypeKey} file "${filePath}": Stored content is not a string.`);
+             _customConsole.error(`Cannot load ${fileTypeKey} file "${filePath}": Stored content is not a string.`);
              return undefined;
         }
         try {
              const parsedContent = JSON.parse(content);
-             // Return a deep copy to avoid modifying the original object in projectFilesData directly
-             return JSON.parse(JSON.stringify(parsedContent));
+             return JSON.parse(JSON.stringify(parsedContent)); // Deep copy
         } catch (e) {
-            ScriptEngine.customConsole.error(`Failed to parse ${fileTypeKey} file "${filePath}": ${e.message}`);
-            // If parsing fails, treat as not found or invalid
+            _customConsole.error(`Failed to parse ${fileTypeKey} file "${filePath}": ${e.message}`);
             return undefined; 
         }
+    } else if (fileTypeKey === 'MODEL_GLB' && content instanceof ArrayBuffer) {
+        return content; // Return ArrayBuffer directly
+    } else if (fileTypeKey === 'MODEL_GLTF' && typeof content === 'string') {
+        return content; // Return GLTF string directly
+    } else if (fileTypeKey === 'STELA_SCRIPT' && typeof content === 'string') {
+        return content; // Return Stela script string directly
     }
-    // Return raw content (string, ArrayBuffer, etc.) for other types
+    
+    // Fallback for potentially mis-typed content or other file types
+    if (typeof content === 'string' && (fileTypeKey === 'MODEL_GLB' || fileTypeKey === 'MODEL_GLTF')){
+        _customConsole.warn(`Loading model file ${filePath} as string, but expected specific type. Check storage format.`);
+    }
     return content;
 }
 
@@ -118,14 +169,18 @@ export function deleteFile(filePath) {
             uiUpdateHooks.clearEditorForDeletedFile(filePath, 'STELA_SCRIPT');
         }
     } else if (filePath.endsWith(FILE_TYPES.VISUAL_SCRIPT.extension)) {
-        // Potentially remove compiled version if VS is also compiled to text on save
         if (currentOpenVisualScriptPath === filePath) {
             currentOpenVisualScriptPath = null;
             uiUpdateHooks.clearEditorForDeletedFile(filePath, 'VISUAL_SCRIPT');
         }
     } else if (filePath.endsWith(FILE_TYPES.LEVEL.extension)) {
-        // Level deletion specific logic (like updating active level if it was deleted)
-        // is handled by LevelDataManager/ProjectManager which calls this function.
+        // Level deletion specific logic handled by LevelDataManager/ProjectManager
+    } else if (fileTypeKey === 'MODEL_GLB' || fileTypeKey === 'MODEL_GLTF') {
+        // TODO: Need to notify ObjectManager to remove/replace any objects using this model path
+        // This is complex because multiple objects might reference the same model path.
+        // For now, just deleting from file system. User will see errors if objects try to load it.
+        // Or, SceneSerializer.loadSceneState will fail to find its modelEmbeddedData / modelSourcePath.
+        _customConsole.log(`Model file "${filePath}" deleted. Objects referencing it may need to be updated or removed.`);
     }
 
     uiUpdateHooks.refreshProjectFilesList(currentProjectNameForFileManager);
@@ -135,7 +190,7 @@ export function deleteFile(filePath) {
 export function renameFile(oldFilePath, newFilePath) {
     if (!currentProjectNameForFileManager || !oldFilePath || !newFilePath || oldFilePath === newFilePath) return false;
     if (projectFilesData[oldFilePath] === undefined) {
-        ScriptEngine.customConsole.error(`Cannot rename file: Old path "${oldFilePath}" not found.`);
+        _customConsole.error(`Cannot rename file: Old path "${oldFilePath}" not found.`);
         return false;
     }
     if (projectFilesData[newFilePath] !== undefined) {
@@ -148,10 +203,11 @@ export function renameFile(oldFilePath, newFilePath) {
     delete projectFilesData[oldFilePath];
     ProjectManager.markProjectDirty();
 
-    // Update open file paths if the renamed file was open
     if (currentOpenTextScriptPath === oldFilePath) currentOpenTextScriptPath = newFilePath;
     if (currentOpenVisualScriptPath === oldFilePath) currentOpenVisualScriptPath = newFilePath;
-    // Add similar handling for other file types if they have "open" states
+    
+    // TODO: If a model file is renamed, update modelSourcePath in all scene objects.
+    // This requires iterating through all levels and all objects, similar to script renaming.
 
     uiUpdateHooks.refreshProjectFilesList(currentProjectNameForFileManager);
     return true;
@@ -174,36 +230,66 @@ export function fileExists(filePath) {
 
 export function getUniqueFilePath(baseName, typeKey, preferredDir = null) {
     if (!currentProjectNameForFileManager || !FILE_TYPES[typeKey]) {
-         ScriptEngine.customConsole.error(`FileManager: Unknown file type key "${typeKey}" for unique path generation.`);
-        // Fallback: just return a path with extension, assuming no directory
+         _customConsole.error(`FileManager: Unknown file type key "${typeKey}" for unique path generation.`);
         return `${baseName}${FILE_TYPES[typeKey]?.extension || ''}`;
     }
     const dir = preferredDir || FILE_TYPES[typeKey].defaultDir || '';
     const ext = FILE_TYPES[typeKey].extension;
 
-    let count = 1;
-    let path = `${dir}${baseName}${ext}`;
-    while (fileExists(path)) {
-        // Append number before extension, e.g., MyScript -> MyScript1.stela
-        const nameWithoutExt = baseName.replace(ext, '');
-        path = `${dir}${nameWithoutExt}${count++}${ext}`;
-    }
+    // Sanitize baseName to remove existing extension if present, and invalid characters
+    let cleanBaseName = baseName.replace(new RegExp(`\\${ext}$`, 'i'), '');
+    cleanBaseName = cleanBaseName.replace(/[^a-zA-Z0-9_.\-\s]/g, '_'); // Allow common chars
+
+    let count = 0; // Start with 0 for no suffix if unique
+    let path;
+    do {
+        const suffix = count === 0 ? '' : `${count}`;
+        path = `${dir}${cleanBaseName}${suffix}${ext}`;
+        count++;
+    } while (fileExists(path));
+    
     return path;
 }
 
-export function getAllProjectFiles() {
-    return { ...projectFilesData };
+export function getAllProjectFilesSerializable() {
+    const serializableFiles = {};
+    for (const path in projectFilesData) {
+        const content = projectFilesData[path];
+        if (content instanceof ArrayBuffer) {
+            const base64 = arrayBufferToBase64(content);
+            if (base64 !== null) {
+                serializableFiles[path] = { _isBase64ArrayBuffer_: true, data: base64 };
+            } else {
+                _customConsole.error(`Failed to serialize ArrayBuffer to Base64 for path: ${path}. Skipping file.`);
+            }
+        } else {
+            serializableFiles[path] = content; // Assumes string or already JSON-stringified
+        }
+    }
+    return serializableFiles;
 }
 
-export function loadAllProjectFiles(filesMap) {
-    projectFilesData = filesMap ? { ...filesMap } : {};
+export function loadAllProjectFiles(filesMapFromProjectFile) {
+    projectFilesData = {}; // Clear existing
     ScriptEngine.clearCompiledScripts();
-    for (const filePath in projectFilesData) {
-        if (filePath.endsWith(FILE_TYPES.STELA_SCRIPT.extension)) {
-            // Compile text scripts on load
+
+    for (const filePath in filesMapFromProjectFile) {
+        const contentOrWrapper = filesMapFromProjectFile[filePath];
+        if (typeof contentOrWrapper === 'object' && contentOrWrapper !== null && contentOrWrapper._isBase64ArrayBuffer_ === true) {
+            const arrayBuffer = base64ToArrayBuffer(contentOrWrapper.data);
+            if (arrayBuffer !== null) {
+                projectFilesData[filePath] = arrayBuffer;
+            } else {
+                 _customConsole.error(`Failed to deserialize Base64 to ArrayBuffer for path: ${filePath}. Skipping file.`);
+            }
+        } else {
+            projectFilesData[filePath] = contentOrWrapper; // Assumes string
+        }
+
+        // Compile text scripts on load
+        if (filePath.endsWith(FILE_TYPES.STELA_SCRIPT.extension) && typeof projectFilesData[filePath] === 'string') {
             ScriptEngine.compileScript(filePath, projectFilesData[filePath], false);
         }
-         // Visual scripts are parsed on loadFile call when needed
     }
     uiUpdateHooks.refreshProjectFilesList(currentProjectNameForFileManager);
 }
@@ -214,7 +300,7 @@ export function getFileTypeKeyFromPath(filePath) {
             return key;
         }
     }
-    return null; // Unknown file type
+    return null; 
 }
 
 // --- Current Open Editor File Tracking ---
@@ -227,12 +313,11 @@ export function setCurrentOpenVisualScriptPath(path) { currentOpenVisualScriptPa
 // --- Script Specific Convenience Functions (Wrappers around generic) ---
 export function saveScript(filePath, content) {
     let finalPath = filePath;
+    // Ensure .stela extension
     if (!finalPath.toLowerCase().endsWith(FILE_TYPES.STELA_SCRIPT.extension.toLowerCase())) {
-         ScriptEngine.customConsole.warn(`saveScript called with path "${filePath}" missing .stela extension. Adding it.`);
-         finalPath += FILE_TYPES.STELA_SCRIPT.extension;
+        finalPath = finalPath.replace(/(\.stela-vs|\.level|\.gltf|\.glb)?$/i, '') + FILE_TYPES.STELA_SCRIPT.extension;
     }
-    // Note: saveFile returns boolean, pass it up
-    return saveFile(finalPath, content) ? finalPath : null; // Return the final path on success
+    return saveFile(finalPath, content) ? finalPath : null;
 }
 
 export function loadScript(filePath, updateCurrentlyOpen = true) {
@@ -242,13 +327,12 @@ export function loadScript(filePath, updateCurrentlyOpen = true) {
 }
 
 export function deleteScript(filePath) {
-     // Note: deleteFile returns boolean, pass it up
     return deleteFile(filePath);
 }
 
 export function renameScript(oldFilePath, newBaseName) {
     const oldDir = oldFilePath.substring(0, oldFilePath.lastIndexOf('/') + 1);
-    const newFilePath = getUniqueFilePath(newBaseName, 'STELA_SCRIPT', oldDir);
+    const newFilePath = getUniqueFilePath(newBaseName, 'STELA_SCRIPT', oldDir); // getUniqueFilePath now handles suffixing
     return renameFile(oldFilePath, newFilePath) ? newFilePath : null;
 }
 
@@ -262,24 +346,22 @@ export function getUniqueScriptName(baseName = "NewScript") {
 
 export function saveVisualScript(filePath, jsonData) {
     let finalPath = filePath;
+    // Ensure .stela-vs extension
     if (!finalPath.toLowerCase().endsWith(FILE_TYPES.VISUAL_SCRIPT.extension.toLowerCase())) {
-         ScriptEngine.customConsole.warn(`saveVisualScript called with path "${filePath}" missing .stela-vs extension. Adding it.`);
-         finalPath += FILE_TYPES.VISUAL_SCRIPT.extension;
+         finalPath = finalPath.replace(/(\.stela|\.level|\.gltf|\.glb)?$/i, '') + FILE_TYPES.VISUAL_SCRIPT.extension;
     }
-    // Note: saveFile returns boolean, pass it up
-    // Need to stringify JSON data before saving
+    
     let jsonString;
     try {
-        jsonString = JSON.stringify(jsonData, null, 2);
+        jsonString = typeof jsonData === 'string' ? jsonData : JSON.stringify(jsonData, null, 2);
     } catch (e) {
-        ScriptEngine.customConsole.error(`Failed to stringify visual script data for "${finalPath}": ${e.message}`);
+        _customConsole.error(`Failed to stringify visual script data for "${finalPath}": ${e.message}`);
         return null;
     }
-    return saveFile(finalPath, jsonString) ? finalPath : null; // Return the final path on success
+    return saveFile(finalPath, jsonString) ? finalPath : null; 
 }
 
 export function loadVisualScript(filePath, updateCurrentlyOpen = true) {
-    // loadFile now handles JSON parsing for VS files
     const data = loadFile(filePath);
     if (data !== undefined && updateCurrentlyOpen) setCurrentOpenVisualScriptPath(filePath);
     return data;

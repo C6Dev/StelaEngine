@@ -1,15 +1,15 @@
-import * as THREE from 'three'; // For MathUtils
+import * as THREE from 'three'; 
 import * as DOM from './dom-elements.js';
 import * as ObjectManager from './object-manager.js';
 import * as ScriptComponentsManager from './ui-script-components-manager.js';
 import * as GameManager from './game-manager.js';
-import { getScene as getThreeSceneInstance, setBackgroundColor } from './three-scene.js'; // Added setBackgroundColor
+import { getScene as getThreeSceneInstance, setBackgroundColor } from './three-scene.js';
+import * as GameCameraService from './game-camera-service.js'; 
 
 function getPotentialParents(selectedObj) {
     const allObjects = ObjectManager.getSceneObjects();
     const potentialParents = [];
 
-    // Function to check if 'obj' is a descendant of 'ancestor'
     function isDescendant(obj, ancestor) {
         let current = obj.parent;
         while (current && current !== getThreeSceneInstance()) {
@@ -20,8 +20,8 @@ function getPotentialParents(selectedObj) {
     }
 
     for (const name in allObjects) {
-        if (allObjects[name] === selectedObj) continue; // Cannot parent to self
-        if (isDescendant(allObjects[name], selectedObj)) continue; // Cannot parent to one of its own children/descendants
+        if (allObjects[name] === selectedObj) continue; 
+        if (isDescendant(allObjects[name], selectedObj)) continue; 
         potentialParents.push(name);
     }
     return potentialParents.sort();
@@ -34,16 +34,15 @@ export function populatePropertiesPanel() {
     if (selectedObject) {
         DOM.selectedObjectIndicator.textContent = `Selected: ${selectedObject.name}`;
         DOM.objectNameGroup.style.display = 'block';
-        DOM.objectParentingGroup.style.display = 'block'; // Show parenting group
+        DOM.objectParentingGroup.style.display = 'block'; 
         DOM.objectTransformGroup.style.display = 'block';
         DOM.objectCameraGroup.style.display = 'block'; 
         DOM.objectScriptsGroup.style.display = 'block'; 
         DOM.deleteObjectBtn.style.display = 'block';
-        DOM.sceneSettingsGroup.style.display = 'none'; // Hide scene settings when object is selected
+        DOM.sceneSettingsGroup.style.display = 'none'; 
 
         DOM.propNameInput.value = selectedObject.name;
 
-        // Populate Parent Dropdown
         DOM.propParentSelect.innerHTML = '';
         const noneOption = document.createElement('option');
         noneOption.value = "None";
@@ -77,8 +76,8 @@ export function populatePropertiesPanel() {
         DOM.propScaleYInput.value = selectedObject.scale.y.toFixed(2);
         DOM.propScaleZInput.value = selectedObject.scale.z.toFixed(2);
 
-        // Populate Camera Attachment UI
-        const activeCameraObjName = ObjectManager.getActiveCameraObjectName();
+        // Populate Camera Attachment UI using GameCameraService
+        const activeCameraObjName = GameCameraService.getActiveCameraObjectName();
         if (activeCameraObjName === selectedObject.name) {
             DOM.cameraAttachmentStatusDiv.textContent = "This object IS the Active Game Camera.";
             DOM.setActiveCameraBtn.style.display = 'none';
@@ -97,23 +96,22 @@ export function populatePropertiesPanel() {
     } else {
         DOM.selectedObjectIndicator.textContent = "No object selected.";
         DOM.objectNameGroup.style.display = 'none';
-        DOM.objectParentingGroup.style.display = 'none'; // Hide parenting group
+        DOM.objectParentingGroup.style.display = 'none'; 
         DOM.objectTransformGroup.style.display = 'none';
         DOM.objectCameraGroup.style.display = 'none'; 
         DOM.objectScriptsGroup.style.display = 'none'; 
         DOM.deleteObjectBtn.style.display = 'none';
-        DOM.sceneSettingsGroup.style.display = 'block'; // Show scene settings when no object is selected
+        DOM.sceneSettingsGroup.style.display = 'block'; 
     }
 
-    // Disable inputs if playing
     const allPropInputs = [
-        DOM.propNameInput, DOM.propParentSelect, // Added parent select
+        DOM.propNameInput, DOM.propParentSelect, 
         DOM.propPosXInput, DOM.propPosYInput, DOM.propPosZInput,
         DOM.propRotXInput, DOM.propRotYInput, DOM.propRotZInput,
         DOM.propScaleXInput, DOM.propScaleYInput, DOM.propScaleZInput,
         DOM.availableScriptsDropdown, DOM.addScriptComponentBtn, DOM.deleteObjectBtn,
         DOM.setActiveCameraBtn, DOM.clearActiveCameraBtn,
-        DOM.propBgColorInput // Add new color input to disable list
+        DOM.propBgColorInput 
     ];
     const removeScriptBtns = DOM.scriptComponentListDiv.querySelectorAll('.remove-script-component-btn');
     
@@ -141,21 +139,18 @@ function handleTransformChangeUI() {
             y: parseFloat(DOM.propPosYInput.value),
             z: parseFloat(DOM.propPosZInput.value),
         },
-        rotation: { //These are local rotations
+        rotation: { 
             x: parseFloat(DOM.propRotXInput.value),
             y: parseFloat(DOM.propRotYInput.value),
             z: parseFloat(DOM.propRotZInput.value),
         },
-        scale: { //These are local scales
+        scale: { 
             x: parseFloat(DOM.propScaleXInput.value),
             y: parseFloat(DOM.propScaleYInput.value),
             z: parseFloat(DOM.propScaleZInput.value),
         }
     };
     ObjectManager.handleTransformChangeLogic(transforms);
-    // Re-populating after every minor input change causes cursor jumps.
-    // The ObjectManager.handleTransformChangeLogic directly updates the object.
-    // We might only need to re-populate if a script changes these values, or on deselection/selection.
 }
 
 function handleParentChangeUI() {
@@ -164,7 +159,6 @@ function handleParentChangeUI() {
     const newParentName = DOM.propParentSelect.value;
     if (selectedObject) {
         ObjectManager.setObjectParent(selectedObject, newParentName === "None" ? null : newParentName);
-        // setObjectParent calls updateObjectListUI and populatePropertiesPanel itself.
     }
 }
 
@@ -172,7 +166,7 @@ function setupPropertiesPanelListeners() {
     DOM.propNameInput.addEventListener('change', handleObjectNameChangeUI);
     DOM.propNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleObjectNameChangeUI(); DOM.propNameInput.blur();} });
 
-    DOM.propParentSelect.addEventListener('change', handleParentChangeUI); // New Listener
+    DOM.propParentSelect.addEventListener('change', handleParentChangeUI); 
 
     const transformInputs = [
         DOM.propPosXInput, DOM.propPosYInput, DOM.propPosZInput,
@@ -193,22 +187,25 @@ function setupPropertiesPanelListeners() {
         if (GameManager.getIsPlaying()) return;
         const selectedObject = ObjectManager.getSelectedObject();
         if (selectedObject) {
-            ObjectManager.setActiveCameraObjectName(selectedObject.name);
+            GameCameraService.setActiveCameraObjectName(selectedObject.name); 
         }
     });
 
     DOM.clearActiveCameraBtn.addEventListener('click', () => {
         if (GameManager.getIsPlaying()) return;
-        ObjectManager.setActiveCameraObjectName(null);
+        GameCameraService.setActiveCameraObjectName(null); 
     });
 
-    DOM.propBgColorInput.addEventListener('input', (event) => { // 'input' for live update on color pickers
+    DOM.propBgColorInput.addEventListener('input', (event) => { 
         if (GameManager.getIsPlaying()) return;
-        setBackgroundColor(event.target.value);
+        setBackgroundColor(event.target.value); 
+        // To persist, we need to update the current level's data
+        // This line has been commented out in the plan as it is not defined in this file.
+        //UIManager.updateActiveLevelBackgroundColor(event.target.value);
     });
 }
 
 export function initPropertiesPanelManager() {
     setupPropertiesPanelListeners();
-    populatePropertiesPanel(); // Initial population
+    populatePropertiesPanel(); 
 }

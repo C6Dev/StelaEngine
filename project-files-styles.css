@@ -1,6 +1,7 @@
 /* Project Files (Bottom Panel Tab) */
 #project-content {
     /* .tab-content.active styling applies */
+    padding: 0; /* Remove padding to allow full-width headers */
 }
 
 #script-file-list-header, 
@@ -8,117 +9,182 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px; 
-    padding-bottom: 4px; 
-    border-bottom: 1px solid #3A3A3A; /* Darker separator */
+    padding: 6px 10px; /* Consistent padding for headers */
+    border-bottom: 1px solid #0F0F0F; /* Darkest border for separation */
+    background-color: #2A2A2A; /* Slightly darker background for headers */
 }
 .script-file-type-header {
-    font-size: 0.8em;
-    color: #B0B0B0;
-    padding-left: 2px; /* Indent slightly */
-    margin-top: 8px; /* Space above type headers */
+    font-size: 0.9em;
+    color: #D0D0D0; /* Brighter for section titles */
+    font-weight: 500; /* Consistent weight */
+    margin-top: 0; /* Remove top margin, handled by list or separator */
 }
 
 
-#script-file-list-header h4 {
+#script-file-list-header h4,
+.script-file-type-header span { /* Target the span for text styling */
     margin: 0;
     font-size: 0.9em; 
-    color: #D0D0D0;
-    font-weight: 500; /* Less bold */
+    color: #E0E0E0; /* Consistent text color */
+    font-weight: 500; 
+}
+#active-level-display-project-files {
+    font-size: 0.8em;
+    color: #88C0D0; 
+    margin-left: 8px;
+    font-style: italic;
+    font-weight: normal;
 }
 
-#create-new-script-btn { 
-    background-color: #383838; 
+/* Styling for buttons in headers */
+#script-file-list-header .create-new-script-btn, /* New Level button specifically */
+.script-file-type-header .create-new-script-btn { /* New... buttons in type headers */
+    background-color: #3C3C3C; /* Slightly lighter than panel for visibility */
     color: #DEDEDE;
-    border: 1px solid #202020;
-    padding: 4px 8px; /* Adjusted padding */
+    border: 1px solid #282828; /* Slightly lighter border */
+    padding: 3px 7px; 
     cursor: pointer;
-    border-radius: 3px; /* Softer radius */
+    border-radius: 3px; 
     font-size: 0.75em;
+    transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+#script-file-list-header .create-new-script-btn:hover,
+.script-file-type-header .create-new-script-btn:hover {
+    background-color: #4A4A4A;
+    border-color: #333333;
 }
 
-#create-new-script-btn:hover {
-    background-color: #4A4A4A;
-}
 
 #script-file-list {
     flex-grow: 1;
     overflow-y: auto;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    font-size: 0.85em; /* Slightly larger text */
+    font-size: 0.85em; 
+    padding: 5px; /* Padding for the list container itself */
 }
 
 #script-file-list .script-file-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 4px 6px; /* Adjusted padding */
+    padding: 6px 8px; /* Increased padding for items */
     cursor: default; 
-    border-radius: 2px;
-    margin-bottom: 1px;
-    color: #A0A0A0; 
+    border-radius: 3px; /* Slightly larger radius */
+    margin-bottom: 2px; /* Spacing between items */
+    color: #B0B0B0; /* Default item text color */
+    transition: background-color 0.1s ease;
 }
+
+.level-thumbnail-container {
+    width: 48px; /* Increased size for better visibility */
+    height: 27px; /* 16:9 aspect for 48px width */
+    margin-right: 8px; /* More space next to thumbnail */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #181818; /* Darker placeholder bg */
+    border: 1px solid #0A0A0A; /* Border for thumbnail */
+    border-radius: 2px;
+    overflow: hidden;
+    padding: 1px; /* Small internal padding if needed */
+}
+.level-thumbnail-small {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+.level-thumbnail-small.placeholder {
+    font-size: 18px; /* Emoji size */
+    line-height: 27px; /* Center emoji vertically */
+    text-align: center;
+    color: #454545; /* Lighter placeholder emoji */
+}
+
 
 #script-file-list .script-file-item span.script-type-icon { 
-    margin-right: 6px; /* Increased space for emoji */
-    min-width: 20px; /* Ensure space for emoji */
+    margin-right: 8px; 
+    min-width: 22px; /* Slightly wider for icon */
     text-align: center;
+    font-size: 1.1em; /* Adjust emoji icon size */
+    color: #888888; /* Dimmer default icon color */
 }
 
-#script-file-list .script-file-item span:not(.script-type-icon) { 
+#script-file-list .script-file-item span.file-name-span { 
     flex-grow: 1;
     cursor: pointer; 
     padding: 2px 0; 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-right: 8px; 
+    color: inherit; /* Inherit color from .script-file-item */
+    transition: color 0.1s ease;
 }
 
 #script-file-list .script-file-item:hover {
-    background-color: #2A2A2A; 
+    background-color: #303030; /* Darker hover for whole item */
+    color: #E0E0E0; /* Brighter text on hover for whole item */
+}
+#script-file-list .script-file-item:hover span.script-type-icon {
+    color: #B0B0B0; /* Slightly brighter icon on item hover */
 }
 
-#script-file-list .script-file-item span:not(.script-type-icon):hover {
-    color: #DEDEDE; 
-    text-decoration: none; 
-}
 
 #script-file-list .script-file-item.selected-script {
-    background-color: #0D99FF; /* New Accent Blue */
-    color: white;
+    background-color: #0D99FF; 
+    color: #FFFFFF !important; /* Ensure white text for selection */
+    border-left: 3px solid #007ACC; /* Add a selection indicator bar */
+    padding-left: 5px; /* Adjust padding to account for border */
 }
 
-#script-file-list .script-file-item.selected-script span {
-    color: white; 
+#script-file-list .script-file-item.selected-script span.script-type-icon,
+#script-file-list .script-file-item.selected-script span.file-name-span {
+    color: #FFFFFF !important; 
 }
 
-#script-file-list .script-file-item.selected-script span:not(.script-type-icon):hover {
-    color: white;
-}
 
 .script-item-controls {
     display: flex;
     align-items: center;
+    flex-shrink: 0; 
+    opacity: 0.7; /* Make controls less prominent by default */
+    transition: opacity 0.15s ease;
+}
+#script-file-list .script-file-item:hover .script-item-controls {
+    opacity: 1; /* Show controls fully on item hover */
 }
 
-.script-item-controls button {
-    margin-left: 6px; 
-    padding: 3px 6px; /* Adjusted for small buttons */
-    font-size: 0.8em; /* Adjusted for small buttons */
-    background-color: #383838; 
-    color: #DEDEDE;
-    border: 1px solid #202020;
+
+.script-item-controls button.control-btn-small {
+    margin-left: 5px; 
+    padding: 3px 5px; 
+    font-size: 0.9em; 
+    background-color: transparent; 
+    color: #999999; /* Slightly lighter default icon color */
+    border: none;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: 3px; /* Consistent radius */
     line-height: 1; 
+    min-width: 22px; 
+    text-align: center;
+    transition: background-color 0.1s ease, color 0.1s ease;
 }
-
-.script-item-controls button:hover {
-    background-color: #4A4A4A;
-    border-color: #2A2A2A;
+.script-item-controls button.control-btn-small:hover {
+    background-color: #404040; 
+    color: #FFFFFF; 
 }
-
-.script-item-controls button.delete-script-btn:hover {
-    background-color: #C62828; /* Consistent red */
+.script-item-controls button.control-btn-small.delete-btn-small:hover {
+    background-color: #E53935; /* Use consistent red from properties panel */
     color: white;
+}
+.script-item-controls button.control-btn-small:disabled {
+    color: #555555 !important;
+    background-color: transparent !important;
+    cursor: not-allowed;
+    opacity: 0.5; /* Further dim disabled controls */
+}
+
+.project-content-separator {
+    border: none;
+    border-top: 1px solid #181818; /* Darker separator */
+    margin: 0; /* Remove margin, rely on header/list padding */
 }

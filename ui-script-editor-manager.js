@@ -7,6 +7,7 @@ import * as VisualScriptEditorManager from './ui-visual-script-editor-manager.js
 import * as UIProjectFilesManager from './ui-project-files-manager.js';
 
 let currentTextScriptFileNameInEditor = null; 
+let _textEditorInterfaceForProjectFiles = {};
 
 function updateTextScriptEditorTabName(name) {
     DOM.currentScriptNameTabSpan.textContent = name || 'Untitled';
@@ -90,7 +91,7 @@ function setupTextScriptEditorControls() {
 export function initScriptEditorManager() {
     setupTextScriptEditorControls();
     
-    const textEditorInterface = {
+    _textEditorInterfaceForProjectFiles = {
         loadTextScriptIntoEditor: loadTextScriptIntoEditor,
         clearTextEditorToUntitled: clearTextEditorToUntitled,
         updateTextScriptEditorTabName: updateTextScriptEditorTabName,
@@ -98,8 +99,11 @@ export function initScriptEditorManager() {
         setCurrentTextScriptFileNameInEditor: (name) => { currentTextScriptFileNameInEditor = name; }
     };
 
-    UIProjectFilesManager.initUIProjectFilesManager(textEditorInterface);
     updateTextScriptEditorTabName(FileManager.getCurrentOpenTextScriptPath() || 'Untitled'); 
+}
+
+export function getTextEditorInterfaceForProjectFiles() {
+    return _textEditorInterfaceForProjectFiles;
 }
 
 export const handleScriptDeleted = (scriptName, scriptType) => { 

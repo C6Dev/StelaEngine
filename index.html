@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="properties-panel-styles.css">
     <link rel="stylesheet" href="project-files-styles.css">
     <link rel="stylesheet" href="console-styles.css">
-    <link rel="stylesheet" href="level-manager-styles.css"> 
+
     <script type="importmap">
     {
         "imports": {
@@ -63,6 +63,7 @@
     <div id="app-main-content">
         <div id="left-panel">
             <h3>Hierarchy</h3>
+            <!-- This container is for the object hierarchy -->
             <div id="object-list-container">
                  <div id="object-list"></div>
             </div>
@@ -106,17 +107,9 @@ print('My object is ' + object.name);"></textarea>
                 </div>
                 <div id="visual-script-editor-content" class="tab-content">
                     <div id="visual-script-toolbar">
-                        <button id="vs-add-node-btn">Add Node</button>
-                        <select id="vs-node-type-select">
-                            <option value="event-start">Event: Start</option>
-                            <option value="event-update">Event: Update</option>
-                            <option value="event-key-press">Event: Key Press</option>
-                            <option value="action-log">Action: Log Message</option>
-                            <option value="action-branch">Action: Branch (If)</option>
-                            <option value="value-number">Value: Number</option>
-                            <option value="value-string">Value: String</option>
-                        </select>
                         <button id="vs-save-as-text-btn">Save as Text Script</button>
+                        <button id="vs-save-btn">Save Visual Script</button>
+                        <button id="vs-clear-btn">Clear Editor</button>
                     </div>
                     <div id="visual-script-graph-container">
                         <svg id="visual-script-svg-layer"></svg>
@@ -188,10 +181,11 @@ print('My object is ' + object.name);"></textarea>
                         <button id="add-script-component-btn">Add Script</button>
                     </div>
                 </div>
-                <div class="property-group" id="scene-settings-group" style="display: block;"> 
-                    <h4>Scene Settings (Current Level)</h4> 
+                <div class="property-group" id="scene-settings-group" style="display: block;">
+                    <h4>Scene Settings (Current Level)</h4>
                     <label for="prop-bg-color">Background Color:</label>
                     <input type="color" id="prop-bg-color" value="#000000">
+                     <div id="active-level-display-properties"></div> 
                 </div>
                 <button id="delete-object-btn" style="display:none;">Delete Selected Object</button>
             </div>
@@ -205,17 +199,8 @@ print('My object is ' + object.name);"></textarea>
         </div>
         <div id="bottom-content">
             <div id="project-content" class="tab-content active">
-                <div id="level-management-header"> 
-                    <h4>Levels <span id="active-level-display">(Level: None)</span></h4>
-                    <button id="create-new-level-btn">New Level</button>
-                </div>
-                <div id="level-list"></div>
-                <hr class="project-content-separator">
-                <div id="script-file-list-header">
-                    <h4>Project Files</h4>
-                    <button id="create-new-script-btn">New File...</button> 
-                </div>
-                <div id="script-file-list"></div>
+                <!-- Project Files List content is managed by ui-project-files-manager -->
+                <div id="project-file-list"></div>
             </div>
             <div id="console-content" class="tab-content">
                  <div id="script-output-label">Script Output:</div>
@@ -227,7 +212,7 @@ print('My object is ' + object.name);"></textarea>
     <div id="load-project-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-button" id="close-load-project-modal">&times;</span>
-            <h3>Load Project From File</h3> 
+            <h3>Load Project From File</h3>
             <div id="load-project-list">
                 <!-- Project list will be populated here -->
             </div>

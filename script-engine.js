@@ -2,29 +2,6 @@ import * as DOM from './dom-elements.js';
 import { getSceneObjects } from './object-manager.js';
 import * as FileManager from './file-manager.js'; // For pre-compiling
 
-let compiledScripts = {}; // Stores { scriptName: compiledFunction }
-let scriptErrorTimeout = null;
-const keyStatesRef = { current: {} }; // To hold reference to main.js keyStates
-let getGameContextFunc = () => ({ camera: null, isPlaying: false }); // Placeholder
-
-export function initScriptEngine(keyStatesObject, gameContextGetter) {
-    keyStatesRef.current = keyStatesObject;
-    if (gameContextGetter) {
-        getGameContextFunc = gameContextGetter;
-    }
-    // Pre-compile all existing scripts
-    const allScriptNames = FileManager.listScripts();
-    allScriptNames.forEach(name => {
-        const content = FileManager.loadScript(name, false); // false: don't update currentOpenScriptName
-        if (content) {
-            compileScript(name, content, false); // false: don't show success message for initial batch
-        }
-    });
-    if (allScriptNames.length > 0) {
-        customConsole.log(`Pre-compiled ${Object.keys(compiledScripts).length} existing scripts.`);
-    }
-}
-
 export const customConsole = {
     log: (...args) => {
         const message = args.map(arg => {
@@ -50,8 +27,37 @@ export const customConsole = {
             DOM.scriptOutputDiv.scrollTop = DOM.scriptOutputDiv.scrollHeight; // Scroll to bottom
         }
         console.error("[StelaScript]", ...args);
+    },
+    warn: (...args) => {
+        const message = args.map(String).join(' ');
+         if (DOM.scriptOutputDiv) { // Check if DOM.scriptOutputDiv is available
+            const currentText = DOM.scriptOutputDiv.textContent;
+            // Optional: style warnings differently or just log as normal text
+            DOM.scriptOutputDiv.textContent = (currentText ? currentText + '\n' : '') + "WARN: " + message;
+            DOM.scriptOutputDiv.scrollTop = DOM.scriptOutputDiv.scrollHeight; // Scroll to bottom
+        }
+        console.warn("[StelaScript]", ...args);
     }
 };
+
+export function getCustomConsole() {
+    return customConsole;
+}
+
+let compiledScripts = {}; // Stores { scriptName: compiledFunction }
+let scriptErrorTimeout = null;
+const keyStatesRef = { current: {} }; // To hold reference to main.js keyStates
+let getGameContextFunc = () => ({ camera: null, isPlaying: false, isFirstFrame: false }); // Placeholder
+
+export function initScriptEngine(keyStatesObject, gameContextGetter) {
+    keyStatesRef.current = keyStatesObject;
+    if (gameContextGetter) {
+        getGameContextFunc = gameContextGetter;
+    }
+    // Pre-compile all existing scripts
+    // This step is now handled by FileManager.loadAllProjectFiles which calls compileScript
+    // when loading .stela files.
+}
 
 export function translateStelaScriptToJS(stelaScript) {
     if (typeof stelaScript !== 'string') {
@@ -166,7 +172,7 @@ export function runScriptOnceForObject(scriptContent, targetObject) {
     }
 }
 
-export function clearEditorScriptState() { // Renamed from clearActiveScript
+export function clearEditorScriptState() { 
     clearOutputMessages();
     // This function might not need to do much with compiledScripts directly anymore
     // as compilation is tied to saving or explicit recompilation.
@@ -190,7 +196,7 @@ export function clearCompiledScripts() {
     // customConsole.log("Compiled script cache cleared."); // Optional: for debugging
 }
 
-export function executeComponentScripts() { // Renamed from executeActiveScriptInLoop
+export function executeComponentScripts() { 
     const allObjects = getSceneObjects();
     const gameContext = getGameContextFunc();
 

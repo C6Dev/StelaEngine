@@ -3,53 +3,122 @@ import * as ProjectManager from './project-manager.js';
 import * as ScriptEngine from './script-engine.js';
 import * as ThreeScene from './three-scene.js';
 import * as UIManager from './ui-manager.js'; 
-import * as FileManager from './file-manager.js'; // For level file paths and content
+import * as FileManager from './file-manager.js';
+import * as LevelDataManager from './level-data-manager.js';
+import * as ObjectManager from './object-manager.js';
+import * as SceneSerializer from './scene-serializer.js';
+import * as ProjectStateCoordinator from './project-state-coordinator.js';
+import * as UIProjectFilesManager from './ui-project-files-manager.js';
 
-const DEFAULT_THUMBNAIL_PLACEHOLDER_TEXT = "No Thumbnail";
 const THUMBNAIL_WIDTH = 128;
 const THUMBNAIL_HEIGHT = 72;
 
-export function initLevelManager() {
-    setupLevelControls();
-    populateLevelListUI();
+export async function addNewLevelFile(levelBaseName) {
+    ProjectStateCoordinator.saveCurrentSceneToActiveLevel();
+
+    const levelPath = FileManager.getUniqueFilePath(levelBaseName, 'LEVEL');
+    const levelFileContentObject = LevelDataManager.createNewLevelFileContent(levelBaseName); 
+
+    if (FileManager.saveFile(levelPath, levelFileContentObject)) {
+        LevelDataManager.addLevelPath(levelPath); 
+        await switchActiveLevelByPath(levelPath); // Use the new local switch function
+
+        // Scene setup is now part of switchActiveLevelByPath
+        // ThreeScene.clearSceneContent();
+        // ObjectManager.resetObjectManager();
+        // ThreeScene.setBackgroundColor(levelFileContentObject.sceneData.sceneBackgroundColor);
+        // await SceneSerializer.loadSceneState(levelFileContentObject.sceneData); 
+        
+        // UIManager.updateObjectListUI(); // Handled by switchActiveLevelByPath
+        // UIManager.populatePropertiesPanel(); // Handled by switchActiveLevelByPath
+        
+        // UIProjectFilesManager.populateProjectFilesList() is called by FileManager hooks
+        // updateSceneSettingsDisplay(); // Handled by switchActiveLevelByPath
+        ScriptEngine.customConsole.log(`New level file "${levelPath}" added and activated.`);
+        
+    } else {
+        ScriptEngine.customConsole.error(`Failed to save new level file "${levelPath}".`);
+    }
 }
 
-function setupLevelControls() {
-    DOM.createNewLevelBtn.addEventListener('click', () => {
-        // ProjectManager.addNewLevel is now ProjectManager.addNewLevelFile
-        const levelBaseName = prompt("Enter new level name (file name without .level):", 
-                                     `Level${ProjectManager.getLevelsCount() + 1}`);
-        if (levelBaseName && levelBaseName.trim()) {
-            ProjectManager.addNewLevelFile(levelBaseName.trim());
-            // populateLevelListUI will be called by ProjectManager flow
-        } else if (levelBaseName !== null) {
-            ScriptEngine.customConsole.error("Level name cannot be empty.");
+export async function switchActiveLevelByPath(levelPath) {
+    const currentActivePath = LevelDataManager.getActiveLevelPath();
+    if (!levelPath || !FileManager.fileExists(levelPath) || levelPath === currentActivePath) {
+        if (levelPath === currentActivePath) {
+            ScriptEngine.customConsole.log(`Level "${levelPath}" is already active.`);
+        } else if (!FileManager.fileExists(levelPath)) {
+            ScriptEngine.customConsole.error(`Cannot switch: Level file "${levelPath}" does not exist.`);
         }
-    });
+        return;
+    }
+    ProjectStateCoordinator.saveCurrentSceneToActiveLevel(); // Save current before switching
 
-    DOM.levelListDiv.addEventListener('click', (event) => {
-        const button = event.target.closest('button');
-        if (!button) return;
+    if (LevelDataManager.switchActiveLevelPath(levelPath)) {
+        const newActiveLevelContent = LevelDataManager.getActiveLevelFileContent(); 
+        if (newActiveLevelContent && newActiveLevelContent.sceneData) { 
+            ScriptEngine.customConsole.log(`Switching to level: "${levelPath}". Level Name in content: ${newActiveLevelContent.levelName || 'N/A'}`);
+            ThreeScene.clearSceneContent();
+            ObjectManager.resetObjectManager();
 
-        const levelItemDiv = button.closest('.level-item');
-        if (!levelItemDiv) return;
-
-        const levelPath = levelItemDiv.dataset.levelPath; // Now using path
-        if (!levelPath) return;
-
-        if (button.classList.contains('switch-level-btn')) {
-            ProjectManager.switchActiveLevelByPath(levelPath);
-        } else if (button.classList.contains('rename-level-btn')) {
-            handleRenameLevel(levelPath);
-        } else if (button.classList.contains('delete-level-btn')) {
-            handleDeleteLevel(levelPath);
-        } else if (button.classList.contains('capture-thumbnail-btn')) {
-            handleCaptureThumbnail(levelPath);
+            ThreeScene.setBackgroundColor(newActiveLevelContent.sceneData.sceneBackgroundColor || '#000000');
+            await SceneSerializer.loadSceneState(newActiveLevelContent.sceneData); 
+            
+            UIManager.updateObjectListUI();
+            UIManager.populatePropertiesPanel();
+            if (UIProjectFilesManager.getPopulateProjectFilesListFunction) {
+                UIProjectFilesManager.getPopulateProjectFilesListFunction()();
+            }
+            updateSceneSettingsDisplay();
+            ObjectManager.setSelectedObjectAndUpdateUI(null); // Deselect object on level switch
+        } else {
+            ScriptEngine.customConsole.error(`Failed to load content or sceneData for level: "${levelPath}" during switch.`);
+            // Fallback to a default empty scene state
+            ThreeScene.clearSceneContent();
+            ObjectManager.resetObjectManager();
+            ThreeScene.setBackgroundColor('#000000');
+            await SceneSerializer.loadSceneState(LevelDataManager.createNewLevelFileContent("ErrorLevel").sceneData);
+            UIManager.updateObjectListUI();
+            UIManager.populatePropertiesPanel();
         }
-    });
+    }
 }
 
-function handleRenameLevel(levelPath) {
+export async function deleteLevelByPathUI(levelPath) { // Renamed to avoid clash with old ProjectManager.deleteLevelByPath
+    const levelFileContent = FileManager.loadFile(levelPath);
+    if (!levelFileContent) return;
+    const levelDisplayName = levelFileContent.levelName || levelPath.substring(levelPath.lastIndexOf('/') + 1);
+    if (confirm(`Are you sure you want to delete level "${levelDisplayName}"? This cannot be undone.`)) {
+        await deleteLevelByPathImpl(levelPath); 
+    }
+}
+
+async function deleteLevelByPathImpl(levelPath) {
+    const levelPaths = LevelDataManager.getAllLevelPaths();
+    if (levelPaths.length <= 1) {
+        ScriptEngine.customConsole.error("Cannot delete the last remaining level.");
+        return false;
+    }
+    if (FileManager.deleteFile(levelPath)) {
+        LevelDataManager.removeLevelPath(levelPath); 
+
+        if (LevelDataManager.getActiveLevelPath() === null && LevelDataManager.getLevelsCount() > 0) {
+            const firstAvailableLevel = LevelDataManager.getAllLevelPaths()[0];
+            await switchActiveLevelByPath(firstAvailableLevel); 
+        } else if (LevelDataManager.getLevelsCount() === 0) {
+            // This case should ideally not be reached if the (levelPaths.length <= 1) check is correct
+            // But as a fallback, create a new default project state.
+            await ProjectManager.createNewProject(ProjectManager.getCurrentProjectName(), true); 
+        }
+        if (UIProjectFilesManager.getPopulateProjectFilesListFunction) {
+            UIProjectFilesManager.getPopulateProjectFilesListFunction()();
+        }
+        updateSceneSettingsDisplay();
+        return true;
+    }
+    return false;
+}
+
+export async function renameLevelByPathUI(levelPath) { // Renamed
     const levelFileContent = FileManager.loadFile(levelPath);
     if (!levelFileContent) return;
 
@@ -60,150 +129,119 @@ function handleRenameLevel(levelPath) {
     if (newBaseName && newBaseName.trim() && newBaseName.trim() !== oldBaseName) {
         const dir = levelPath.substring(0, levelPath.lastIndexOf('/') + 1);
         const newLevelPath = dir + newBaseName.trim() + FileManager.FILE_TYPES.LEVEL.extension;
-        ProjectManager.renameLevelByPath(levelPath, newLevelPath);
+        await renameLevelByPathImpl(levelPath, newLevelPath); // Use local impl
     } else if (newBaseName !== null && newBaseName.trim() === oldBaseName) {
         ScriptEngine.customConsole.log("Level rename cancelled or name unchanged.");
-    } else if (newBaseName !== null) {
+    } else if (newBaseName !== null) { // Empty or whitespace only
         ScriptEngine.customConsole.error("New level name cannot be empty.");
     }
 }
 
-function handleDeleteLevel(levelPath) {
-    const levelFileContent = FileManager.loadFile(levelPath);
-    if (!levelFileContent) return;
-    const levelDisplayName = levelFileContent.levelName || levelPath.substring(levelPath.lastIndexOf('/') + 1);
-    if (confirm(`Are you sure you want to delete level "${levelDisplayName}"? This cannot be undone.`)) {
-        ProjectManager.deleteLevelByPath(levelPath);
+async function renameLevelByPathImpl(oldLevelPath, newLevelPath) {
+    // Ensure the new path has the correct extension, though getUniqueFilePath typically handles this
+    if (!newLevelPath.toLowerCase().endsWith(FileManager.FILE_TYPES.LEVEL.extension)) {
+        newLevelPath = newLevelPath.replace(/(\.level)?$/i, '') + FileManager.FILE_TYPES.LEVEL.extension;
     }
+    
+    // Check if the new path already exists (FileManager.renameFile also checks, but good for early exit)
+    if (FileManager.fileExists(newLevelPath) && newLevelPath !== oldLevelPath) {
+        ScriptEngine.customConsole.error(`Cannot rename: File "${newLevelPath}" already exists.`);
+        alert(`Cannot rename: File "${newLevelPath}" already exists.`);
+        return false;
+    }
+
+    if (FileManager.renameFile(oldLevelPath, newLevelPath)) {
+        LevelDataManager.renameLevelPath(oldLevelPath, newLevelPath);
+        
+        const levelContent = FileManager.loadFile(newLevelPath); 
+        if (levelContent) {
+            const newBaseNameFromFilePath = newLevelPath.substring(newLevelPath.lastIndexOf('/') + 1).replace(FileManager.FILE_TYPES.LEVEL.extension, '');
+            if (levelContent.levelName !== newBaseNameFromFilePath) {
+                levelContent.levelName = newBaseNameFromFilePath;
+                FileManager.saveFile(newLevelPath, levelContent); 
+            }
+        }
+        
+        if (UIProjectFilesManager.getPopulateProjectFilesListFunction) {
+            UIProjectFilesManager.getPopulateProjectFilesListFunction()();
+        }
+        if (LevelDataManager.getActiveLevelPath() === newLevelPath) {
+             updateSceneSettingsDisplay();
+        }
+        return true;
+    }
+    return false;
 }
 
-async function handleCaptureThumbnail(levelPath) {
+export async function handleCaptureThumbnail(levelPath) {
     const levelFileContent = FileManager.loadFile(levelPath);
-    if (!levelFileContent) return;
+    if (!levelFileContent) {
+        ScriptEngine.customConsole.error(`Cannot capture thumbnail: Level file "${levelPath}" not found.`);
+        return;
+    }
     const levelDisplayName = levelFileContent.levelName || levelPath.substring(levelPath.lastIndexOf('/') + 1);
 
-    if (ProjectManager.getActiveLevelPath() !== levelPath) {
+    if (LevelDataManager.getActiveLevelPath() !== levelPath) {
         if (!confirm(`To capture thumbnail for "${levelDisplayName}", it needs to be the active level. Switch now?`)) {
             return;
         }
-        await ProjectManager.switchActiveLevelByPath(levelPath);
-        await new Promise(resolve => requestAnimationFrame(resolve)); // Wait for scene to update
+        await switchActiveLevelByPath(levelPath); // Use local function
+        await new Promise(resolve => setTimeout(resolve, 100)); 
     }
 
     const wasGizmoVisible = ThreeScene.getTransformControls().visible;
+    const gizmoObject = ThreeScene.getTransformControls().object; 
     if (wasGizmoVisible) ThreeScene.detachTransformControls();
 
     const thumbnailDataUrl = ThreeScene.captureSceneThumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
 
-    if (wasGizmoVisible && ThreeScene.getTransformControls().object) {
-        ThreeScene.attachTransformControls(ThreeScene.getTransformControls().object);
+    if (wasGizmoVisible && gizmoObject) { 
+        ThreeScene.attachTransformControls(gizmoObject);
     }
 
     if (thumbnailDataUrl) {
-        ProjectManager.updateLevelThumbnail(ProjectManager.getActiveLevelPath(), thumbnailDataUrl); // Pass path
+        await updateLevelThumbnailImpl(levelPath, thumbnailDataUrl); // Use local impl
         ScriptEngine.customConsole.log(`Thumbnail captured for level "${levelDisplayName}".`);
     } else {
         ScriptEngine.customConsole.error("Failed to capture thumbnail.");
     }
-    // populateLevelListUI(); // Called by ProjectManager.updateLevelThumbnail
 }
 
-export function populateLevelListUI() {
-    const levelPaths = ProjectManager.getAllLevelPaths();
-    const activeLevelPath = ProjectManager.getActiveLevelPath();
-    const activeLevelFileContent = activeLevelPath ? FileManager.loadFile(activeLevelPath) : null;
-
-    DOM.levelListDiv.innerHTML = '';
-    const activeLevelDisplayName = activeLevelFileContent?.levelName || activeLevelPath?.substring(activeLevelPath.lastIndexOf('/') + 1) || 'None';
-    DOM.activeLevelDisplay.textContent = `(Active: ${activeLevelDisplayName})`;
-
-    if (levelPaths.length === 0) {
-        const p = document.createElement('p');
-        p.textContent = "No levels in this project yet. Click 'New Level' to start.";
-        p.style.fontSize = "0.8em";
-        p.style.color = "#777";
-        DOM.levelListDiv.appendChild(p);
-        return;
+async function updateLevelThumbnailImpl(levelPath, thumbnailDataUrl) { 
+    const levelContent = FileManager.loadFile(levelPath); 
+    if (levelContent) {
+        levelContent.thumbnailDataUrl = thumbnailDataUrl;
+        if (FileManager.saveFile(levelPath, levelContent)) { 
+            if (UIProjectFilesManager.getPopulateProjectFilesListFunction) {
+                UIProjectFilesManager.getPopulateProjectFilesListFunction()();
+            }
+        }
     }
+}
 
-    levelPaths.forEach((path) => {
-        const levelContent = FileManager.loadFile(path);
-        if (!levelContent) {
-            console.error(`Could not load level content for path: ${path}`);
-            return;
-        }
-
-        const itemDiv = document.createElement('div');
-        itemDiv.classList.add('level-item');
-        itemDiv.dataset.levelPath = path; // Store full path
-        if (path === activeLevelPath) {
-            itemDiv.classList.add('active-level');
-        }
-
-        const thumbnailImg = document.createElement('img');
-        thumbnailImg.classList.add('level-thumbnail');
-        if (levelContent.thumbnailDataUrl) {
-            thumbnailImg.src = levelContent.thumbnailDataUrl;
-        } else {
-            thumbnailImg.classList.add('placeholder');
-            thumbnailImg.alt = DEFAULT_THUMBNAIL_PLACEHOLDER_TEXT;
-            // To display text in placeholder, create a div instead or overlay text
-        }
-         // Use placeholder div logic from original if image src is not set
-        if (levelContent.thumbnailDataUrl) {
-            itemDiv.appendChild(thumbnailImg);
-        } else {
-            const placeholderDiv = document.createElement('div');
-            placeholderDiv.classList.add('level-thumbnail', 'placeholder');
-            placeholderDiv.textContent = DEFAULT_THUMBNAIL_PLACEHOLDER_TEXT;
-            itemDiv.appendChild(placeholderDiv);
-        }
-
-
-        const nameSpan = document.createElement('span');
-        nameSpan.classList.add('level-name');
-        nameSpan.textContent = levelContent.levelName || path.substring(path.lastIndexOf('/') + 1);
-        nameSpan.title = path; // Show full path on hover
-        itemDiv.appendChild(nameSpan);
-
-        const controlsDiv = document.createElement('div');
-        controlsDiv.classList.add('level-item-controls');
-
-        const switchBtn = document.createElement('button');
-        switchBtn.textContent = 'Switch';
-        switchBtn.classList.add('switch-level-btn');
-        switchBtn.title = "Make this the active level";
-        switchBtn.disabled = (path === activeLevelPath);
-        controlsDiv.appendChild(switchBtn);
-        
-        const captureBtn = document.createElement('button');
-        captureBtn.textContent = 'Thumb';
-        captureBtn.classList.add('capture-thumbnail-btn');
-        captureBtn.title = "Capture Thumbnail (makes level active if not already)";
-        controlsDiv.appendChild(captureBtn);
-
-        const renameBtn = document.createElement('button');
-        renameBtn.textContent = 'Rename';
-        renameBtn.classList.add('rename-level-btn');
-        controlsDiv.appendChild(renameBtn);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Del';
-        deleteBtn.classList.add('delete-level-btn');
-        deleteBtn.disabled = levelPaths.length <= 1;
-        controlsDiv.appendChild(deleteBtn);
-
-        itemDiv.appendChild(controlsDiv);
-        DOM.levelListDiv.appendChild(itemDiv);
-    });
+export function updateActiveLevelBackgroundColor(hexColorString) {
+    if (LevelDataManager.updateActiveLevelBackgroundColor(hexColorString)) { // This saves via FileManager and marks dirty
+        ThreeScene.setBackgroundColor(hexColorString);
+        updateSceneSettingsDisplay(); // Refresh UI display
+    }
 }
 
 export function updateSceneSettingsDisplay() {
-    const activeLevelContent = ProjectManager.getActiveLevelFileContent();
+    const activeLevelContent = LevelDataManager.getActiveLevelFileContent(); // Use LevelDataManager
     if (activeLevelContent && activeLevelContent.sceneData) {
         DOM.propBgColorInput.value = activeLevelContent.sceneData.sceneBackgroundColor || '#000000';
+        if (DOM.activeLevelDisplayProperties) {
+             const activeLevelName = activeLevelContent.levelName || LevelDataManager.getActiveLevelPath()?.split('/').pop() || 'None';
+             DOM.activeLevelDisplayProperties.textContent = `Editing: ${activeLevelName}`;
+        }
+
     } else {
         DOM.propBgColorInput.value = '#000000';
+        if (DOM.activeLevelDisplayProperties) {
+            DOM.activeLevelDisplayProperties.textContent = `Editing: None`;
+        }
     }
-    UIManager.populatePropertiesPanel();
 }
+
+export const handleRenameLevel = renameLevelByPathUI;
+export const handleDeleteLevel = deleteLevelByPathUI;

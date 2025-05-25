@@ -6,6 +6,7 @@ import * as ScriptEngine from './script-engine.js';
 import * as ObjectManager from './object-manager.js';
 import * as ProjectManager from './project-manager.js';
 import * as GameManager from './game-manager.js';
+import * as FileManager from './file-manager.js';
 
 export function initGltfLoaderManager() {
     DOM.modelFileInput.addEventListener('change', handleGltfFileSelected);
@@ -27,12 +28,22 @@ function handleGltfFileSelected(event) {
 
     const reader = new FileReader();
     reader.onload = (e) => {
+        const rawModelData = e.target.result; 
+        const modelFileTypeKey = file.name.toLowerCase().endsWith('.glb') ? 'MODEL_GLB' : 'MODEL_GLTF';
+        
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+        const modelPathInProject = FileManager.getUniqueFilePath(baseName, modelFileTypeKey);
+
+        if (!FileManager.saveFile(modelPathInProject, rawModelData)) {
+            ScriptEngine.customConsole.error(`Failed to internally store model data for "${file.name}".`);
+            return;
+        }
+        
         const loader = new GLTFLoader();
         try {
-            loader.parse(e.target.result, '', 
+            loader.parse(rawModelData, '', 
                 (gltf) => {
-                    ObjectManager.addGltfModelDataToScene(gltf.scene, file.name);
-                    // ProjectManager.markProjectDirty(); // This will be called by ObjectManager
+                    ObjectManager.addGltfModelDataToScene(gltf.scene, modelPathInProject); 
                 }, 
                 (error) => {
                     console.error('Error parsing GLTF model:', error);
@@ -57,4 +68,3 @@ function handleGltfFileSelected(event) {
         ScriptEngine.customConsole.error("Unsupported model file type. Please use .gltf or .glb");
     }
 }
-

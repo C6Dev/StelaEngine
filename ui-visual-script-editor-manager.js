@@ -8,6 +8,7 @@ import { NODE_TYPES } from './visual-script-node-types.js';
 let currentVisualScriptFileName = null;
 let visualGraphInstance = null;
 let contextMenuLogicalCoords = { x: 0, y: 0 }; // Store logical coords for node add
+let _visualEditorInterfaceForProjectFiles = {};
 
 function updateVisualScriptEditorTabName(name) {
     DOM.currentVisualScriptNameTabSpan.textContent = name ? name.split('/').pop() : 'Untitled'; // Show only filename
@@ -139,17 +140,12 @@ function _handleGlobalInteractionForContextMenu(event) {
 }
 
 function setupEventListeners() {
-    DOM.vsAddNodeBtn.addEventListener('click', () => {
-        if (!visualGraphInstance) return;
-        const selectedType = DOM.vsNodeTypeSelect.value;
-        // Get view center in logical coordinates
-        const graphRect = DOM.visualScriptGraphContainer.getBoundingClientRect();
-        const centerX = (graphRect.width / 2 - visualGraphInstance.interactionManager.panX) / visualGraphInstance.interactionManager.currentScale;
-        const centerY = (graphRect.height / 2 - visualGraphInstance.interactionManager.panY) / visualGraphInstance.interactionManager.currentScale;
-        
-        visualGraphInstance.addNode(selectedType, centerX, centerY);
-    });
+    // DOM.vsAddNodeBtn was removed as node addition is handled via context menu
+    // DOM.vsNodeTypeSelect was also removed
+    
     DOM.vsSaveAsTextBtn.addEventListener('click', handleSaveVisualScriptAsText);
+    DOM.vsSaveBtn.addEventListener('click', saveVisualScript); // Added direct call for saving
+    DOM.vsClearBtn.addEventListener('click', clearEditor);   // Added direct call for clearing
 
     DOM.vsNodeContextMenuSearch.addEventListener('input', handleContextMenuSearch);
 
@@ -182,6 +178,19 @@ export function initVisualScriptEditorManager() {
     if (visualGraphInstance && visualGraphInstance.nodes.length === 0 && !FileManager.getCurrentOpenVisualScriptPath()) {
         // visualGraphInstance.addNode('event-start', 50, 50); // Don't add default node for cleaner start
     }
+    
+    _visualEditorInterfaceForProjectFiles = {
+        loadVisualScriptIntoEditor: loadVisualScript,
+        clearVisualScriptEditorForNewScript: clearEditorForNewScript,
+        clearVisualScriptEditor: clearEditor,
+        updateVisualScriptEditorTabName: updateEditorTabNameWithCurrentFile,
+        getCurrentVisualScriptFileNameInEditor: () => currentVisualScriptFileName,
+        setCurrentVisualScriptFileNameInEditor: (name) => { currentVisualScriptFileName = name; }
+    };
+}
+
+export function getVisualEditorInterfaceForProjectFiles() {
+    return _visualEditorInterfaceForProjectFiles;
 }
 
 export function loadVisualScript(name, data) {
