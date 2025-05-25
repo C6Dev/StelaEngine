@@ -47,7 +47,10 @@ export const sceneViewContent = document.getElementById('scene-view-content');
 export const viewerContainer = document.getElementById('viewer-container'); 
 
 export const scriptEditorContent = document.getElementById('script-editor-content');
+export const scriptEditorWrapper = document.getElementById('script-editor-wrapper'); 
+export const lineNumbersDiv = document.getElementById('line-numbers'); 
 export const scriptInput = document.getElementById('script-input'); 
+export const suggestionPopup = document.getElementById('suggestion-popup'); 
 export const scriptControls = document.getElementById('script-controls');
 export const runUpdateBtn = document.getElementById('run-update-btn'); 
 export const runOnceBtn = document.getElementById('run-once-btn');

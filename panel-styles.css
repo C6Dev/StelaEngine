@@ -1,7 +1,7 @@
 #left-panel, #right-panel {
     width: 250px; 
-    background-color: #242424; 
-    border-right: 1px solid #0F0F0F; 
+    background-color: #242424; /* Dark grey panel background */
+    border-right: 1px solid #0F0F0F; /* Darkest border */
     display: flex;
     flex-direction: column;
     padding: 8px; 
@@ -11,24 +11,24 @@
 }
 #right-panel {
     border-right: none;
-    border-left: 1px solid #0F0F0F; 
-    width: 260px; 
+    border-left: 1px solid #0F0F0F; /* Darkest border */
+    width: 260px; /* Keep slightly wider for properties */
 }
 
-#left-panel h3, #right-panel #properties-panel h3 { 
+#left-panel h3, #right-panel #properties-panel h3 { /* Panel titles */
     margin-top: 0;
     font-size: 1em; 
-    color: #E0E0E0; 
-    border-bottom: 1px solid #3A3A3A; 
+    color: #E0E0E0; /* Brighter text for panel titles */
+    border-bottom: 1px solid #3A3A3A; /* Medium dark grey border */
     padding-bottom: 6px; 
     margin-bottom: 8px; 
 }
 
-#object-list-container { 
+#object-list-container { /* Container for the hierarchy list */
     flex-grow: 1;
     overflow-y: auto;
-    background-color: #1E1E1E; 
-    border: 1px solid #0F0F0F; 
+    background-color: #1E1E1E; /* Slightly lighter dark grey for list background */
+    border: 1px solid #0F0F0F; /* Darkest border */
     border-radius: 3px; 
 }
 
@@ -36,7 +36,7 @@
     padding: 5px; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     font-size: 0.8em; 
-    color: #C0C0C0; 
+    color: #C0C0C0; /* Light grey for item text */
 }
 #object-list .object-list-item {
     padding: 4px 6px; 
@@ -48,17 +48,17 @@
     text-overflow: ellipsis; 
 }
 #object-list .object-list-item:hover {
-    background-color: #303030; 
+    background-color: #303030; /* Darker hover for list items */
 }
 #object-list .object-list-item.selected {
-    background-color: #0D99FF; 
-    color: #FFFFFF;
+    background-color: #0D99FF; /* Accent blue for selection */
+    color: #FFFFFF; /* White text for selected item */
 }
 
 #bottom-panel {
     height: 200px; 
-    background-color: #242424; 
-    border-top: 1px solid #0F0F0F; 
+    background-color: #242424; /* Matches side panels */
+    border-top: 1px solid #0F0F0F; /* Darkest border */
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -71,10 +71,10 @@
     overflow: hidden;
 }
 #bottom-content .tab-content {
-    background-color: #1E1E1E; 
+    background-color: #1E1E1E; /* Matches hierarchy list background */
     padding: 8px; 
 }
 #bottom-content .tab-content.active {
-    display: flex; 
+    display: flex; /* Ensure flex for console content if needed */
     flex-direction: column;
 }

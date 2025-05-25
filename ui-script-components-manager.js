@@ -2,11 +2,12 @@ import * as DOM from './dom-elements.js';
 import * as ObjectScriptingService from './object-scripting-service.js';
 import * as ScriptEngine from './script-engine.js';
 import * as FileManager from './file-manager.js';
-import * as UIManager from './ui-manager.js';
+import * as ObjectManager from './object-manager.js'; 
+import * as UIManager from './ui-manager.js'; 
 
 export function setupScriptComponentControls() {
     DOM.addScriptComponentBtn.addEventListener('click', () => {
-        const selectedObject = UIManager.getSelectedObject();
+        const selectedObject = ObjectManager.getSelectedObject(); 
         const scriptName = DOM.availableScriptsDropdown.value;
         if (selectedObject && scriptName) {
             ObjectScriptingService.addScriptComponentToObject(selectedObject, scriptName);
@@ -21,7 +22,7 @@ export function setupScriptComponentControls() {
     DOM.scriptComponentListDiv.addEventListener('click', (event) => {
         if (event.target.classList.contains('remove-script-component-btn')) {
             const scriptName = event.target.dataset.scriptName;
-            const selectedObject = UIManager.getSelectedObject();
+            const selectedObject = ObjectManager.getSelectedObject(); 
             if (selectedObject && scriptName) {
                 ObjectScriptingService.removeScriptComponentFromObject(selectedObject, scriptName);
                 // populatePropertiesPanel() will be called by the service or its chain

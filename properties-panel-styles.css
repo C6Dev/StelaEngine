@@ -8,18 +8,18 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    font-size: 0.875em; /* Slightly smaller base for panel */
+    font-size: 0.875em; 
 }
 
 #selected-object-indicator {
     font-style: italic;
-    color: #888888;
-    margin-bottom: 6px; /* Reduced margin */
+    color: #888888; 
+    margin-bottom: 6px; 
     font-size: 0.85em;
 }
 
 .property-group {
-    margin-bottom: 10px; /* Reduced margin */
+    margin-bottom: 10px; 
 }
 
 .property-group.disabled {
@@ -29,41 +29,40 @@
 
 .property-group h4 {
     font-size: 0.9em; 
-    color: #D0D0D0;
+    color: #D0D0D0; 
     margin-top: 0;
-    margin-bottom: 5px; /* Reduced margin */
-    font-weight: 500; /* Less bold */
+    margin-bottom: 5px; 
+    font-weight: 500; 
 }
 
 .property-group label {
     display: inline-block;
     margin-bottom: 2px;
-    font-size: 0.85em; /* Adjusted size */
-    color: #B0B0B0; /* Lighter label */
+    font-size: 0.85em; 
+    color: #B0B0B0; 
     width: auto; 
     min-width: 15px; 
     text-align: right;
     margin-right: 5px;
 }
 
-.property-group > label:first-child { /* For Name, Parent labels */
+.property-group > label:first-child { 
     display: block; 
     text-align: left;
     width: auto;
     margin-right: 0;
     margin-bottom: 3px;
-    font-weight: 500;
+    font-weight: 500; 
 }
-
 
 .property-group input[type="text"],
 .property-group input[type="number"],
 .property-group select { 
     width: 100%; 
-    padding: 6px; /* Adjusted padding */
-    background-color: #2C2C2C; /* Darker input background */
-    border: 1px solid #181818; /* Very dark border */
-    border-radius: 3px; /* Softer radius */
+    padding: 6px; 
+    background-color: #2C2C2C; 
+    border: 1px solid #181818; 
+    border-radius: 3px; 
     color: #DEDEDE;
     font-size: 0.95em; 
     box-sizing: border-box;
@@ -74,17 +73,16 @@
 
 /* Parenting Group */
 #object-parenting-group select { 
-    /* Uses combined style above */
 }
 
 /* Camera Attachment */
 #object-camera-group button {
     width: 100%;
-    padding: 6px 8px; /* Adjusted padding */
+    padding: 6px 8px; 
     margin-top: 4px;
-    background-color: #0D99FF; /* New Accent blue */
+    background-color: #0D99FF; 
     color: white;
-    border: 1px solid #007ACC; /* Darker border for accent */
+    border: 1px solid #007ACC; 
     cursor: pointer;
     border-radius: 3px;
     font-size: 0.85em;
@@ -93,7 +91,7 @@
     background-color: #007ACC;
 }
 #object-camera-group button#clear-active-camera-btn {
-    background-color: #D32F2F; /* Darker red */
+    background-color: #D32F2F; 
     border-color: #B71C1C;
 }
 #object-camera-group button#clear-active-camera-btn:hover {
@@ -101,7 +99,7 @@
 }
 #camera-attachment-status {
     font-size: 0.8em;
-    color: #9E9E9E; /* Secondary text */
+    color: #9E9E9E; 
     margin-bottom: 4px;
 }
 
@@ -113,18 +111,18 @@
     margin-bottom: 8px;
     max-height: 120px; 
     overflow-y: auto;
-    border: 1px solid #181818; /* Very dark border */
+    border: 1px solid #181818; 
     padding: 4px;
-    background-color: #1A1A1A; /* Base dark background */
+    background-color: #1A1A1A; 
     border-radius: 3px;
 }
 .script-component-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 3px 5px; /* Adjusted padding */
+    padding: 3px 5px; 
     font-size: 0.8em;
-    background-color: #282828; /* Slightly lighter item bg */
+    background-color: #282828; 
     margin-bottom: 2px;
     border-radius: 2px;
 }
@@ -132,10 +130,10 @@
     color: #B0B0B0;
 }
 .script-component-item button.remove-script-component-btn {
-    background-color: #484848; /* Dark grey button */
+    background-color: #484848; 
     color: #DEDEDE;
     border: none;
-    padding: 2px 6px; /* Adjusted padding */
+    padding: 2px 6px; 
     font-size: 0.75em;
     cursor: pointer;
     border-radius: 2px;
@@ -153,10 +151,13 @@
     font-size: 0.85em; 
 }
 #add-script-component-controls button {
-    padding: 6px 8px; /* Match camera buttons */
+    padding: 6px 8px; 
     font-size: 0.85em;
-    background-color: #0D99FF;
-    border-color: #007ACC;
+    background-color: #0D99FF; 
+    color: white;
+    border: 1px solid #007ACC;
+    border-radius: 3px;
+    cursor: pointer;
 }
 #add-script-component-controls button:hover {
     background-color: #007ACC;
@@ -177,7 +178,7 @@
 .vector3-input label { 
     width: auto;
     margin-right: 3px;
-    line-height: 26px; /* Align with input height + padding */
+    line-height: 26px; 
 }
 .vector3-input input[type="number"] {
     flex-grow: 1;
@@ -186,12 +187,12 @@
 }
 
 #delete-object-btn {
-    background-color: #E53935; /* New Modern Red */
+    background-color: #E53935; 
     color: white;
-    border: 1px solid #C62828;
+    border: 1px solid #C62828; 
     padding: 6px 10px;
     cursor: pointer;
-    border-radius: 3px; /* Softer radius */
+    border-radius: 3px; 
     font-size: 0.9em;
     width: 100%;
     margin-top: 8px;
@@ -203,15 +204,15 @@
 
 /* Scene Settings Group */
 #scene-settings-group {
-    margin-top: 15px; /* Add some space above it */
+    margin-top: 15px; 
 }
 
 #scene-settings-group h4 {
-    font-size: 0.9em;
-    color: #D0D0D0;
+    font-size: 0.9em; 
+    color: #D0D0D0; 
     margin-top: 0;
-    margin-bottom: 5px;
-    font-weight: 500;
+    margin-bottom: 5px; 
+    font-weight: 500; 
 }
 
 #scene-settings-group label {
@@ -224,11 +225,17 @@
 
 #scene-settings-group input[type="color"] {
     width: 100%;
-    height: 30px; /* Adjust height */
-    padding: 2px; /* Small padding for the color well */
-    background-color: #2C2C2C;
-    border: 1px solid #181818;
+    height: 30px; 
+    padding: 2px; 
+    background-color: #2C2C2C; 
+    border: 1px solid #181818; 
     border-radius: 3px;
     box-sizing: border-box;
     cursor: pointer;
+}
+#active-level-display-properties {
+    font-size: 0.8em;
+    color: #9E9E9E;
+    margin-top: 6px;
+    font-style: italic;
 }

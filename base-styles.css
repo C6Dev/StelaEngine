@@ -68,4 +68,5 @@ header p {
     flex-grow: 1;
     position: relative; 
     overflow: hidden; 
+    /* background-color: #1E1E1E; */ 
 }

@@ -4,6 +4,7 @@
     text-align: center;
     color: #A0A0A0; 
     font-size: 1.2em;
+    background-color: #1A1A1A; 
 }
 
 #visual-script-editor-content.active { 
@@ -28,7 +29,7 @@
     padding: 4px 8px; 
     background-color: #383838; 
     color: #DEDEDE;
-    border: 1px solid #202020;
+    border: 1px solid #202020; 
     border-radius: 3px; 
     font-size: 0.85em;
     cursor: pointer;
@@ -36,7 +37,14 @@
 }
 #visual-script-toolbar button:hover,
 #visual-script-toolbar select:hover {
-    background-color: #4A4A4A;
+    background-color: #4A4A4A; 
+}
+#visual-script-toolbar button#vs-save-btn {
+    background-color: #0D99FF; 
+    border-color: #007ACC;
+}
+#visual-script-toolbar button#vs-save-btn:hover {
+    background-color: #007ACC;
 }
 
 #visual-script-graph-container {
@@ -232,11 +240,11 @@
 /* Visual Script Node Context Menu */
 .vs-context-menu {
     position: absolute;
-    background-color: #333337; /* Darker than node header */
-    border: 1px solid #181818; /* Very dark border */
+    background-color: #333337; 
+    border: 1px solid #181818; 
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    z-index: 1000; /* Above nodes and connections */
+    z-index: 1000; 
     min-width: 200px;
     max-height: 300px;
     display: flex;
@@ -246,7 +254,7 @@
 #vs-node-context-menu-search {
     padding: 8px;
     margin: 5px;
-    background-color: #2A2A2D; /* Node background color */
+    background-color: #2A2A2D; 
     border: 1px solid #181818;
     border-radius: 3px;
     color: #DEDEDE;
@@ -254,7 +262,7 @@
 }
 #vs-node-context-menu-search:focus {
     outline: none;
-    border-color: #0D99FF;
+    border-color: #0D99FF; 
 }
 
 #vs-node-context-menu-list {
@@ -267,13 +275,13 @@
 
 #vs-node-context-menu-list li {
     padding: 6px 10px;
-    color: #B0B0B0;
+    color: #B0B0B0; 
     cursor: pointer;
     font-size: 0.85em;
     border-radius: 2px;
 }
 
 #vs-node-context-menu-list li:hover {
-    background-color: #0D99FF;
+    background-color: #0D99FF; 
     color: #FFFFFF;
 }

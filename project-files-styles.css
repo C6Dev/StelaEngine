@@ -1,7 +1,7 @@
 /* Project Files (Bottom Panel Tab) */
 #project-content {
     /* .tab-content.active styling applies */
-    padding: 0; /* Remove padding to allow full-width headers */
+    padding: 0; 
 }
 
 #script-file-list-header, 
@@ -9,39 +9,39 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 10px; /* Consistent padding for headers */
-    border-bottom: 1px solid #0F0F0F; /* Darkest border for separation */
-    background-color: #2A2A2A; /* Slightly darker background for headers */
+    padding: 6px 10px; 
+    border-bottom: 1px solid #0F0F0F; 
+    background-color: #2A2A2A; 
 }
 .script-file-type-header {
     font-size: 0.9em;
-    color: #D0D0D0; /* Brighter for section titles */
-    font-weight: 500; /* Consistent weight */
-    margin-top: 0; /* Remove top margin, handled by list or separator */
+    color: #D0D0D0; 
+    font-weight: 500; 
+    margin-top: 0; 
 }
 
 
 #script-file-list-header h4,
-.script-file-type-header span { /* Target the span for text styling */
+.script-file-type-header span { 
     margin: 0;
     font-size: 0.9em; 
-    color: #E0E0E0; /* Consistent text color */
+    color: #E0E0E0; 
     font-weight: 500; 
 }
 #active-level-display-project-files {
     font-size: 0.8em;
-    color: #88C0D0; 
+    color: #88C0D0; /* Light blue for active level info */
     margin-left: 8px;
     font-style: italic;
     font-weight: normal;
 }
 
 /* Styling for buttons in headers */
-#script-file-list-header .create-new-script-btn, /* New Level button specifically */
-.script-file-type-header .create-new-script-btn { /* New... buttons in type headers */
-    background-color: #3C3C3C; /* Slightly lighter than panel for visibility */
+#script-file-list-header .create-new-script-btn, 
+.script-file-type-header .create-new-script-btn { 
+    background-color: #3C3C3C; 
     color: #DEDEDE;
-    border: 1px solid #282828; /* Slightly lighter border */
+    border: 1px solid #282828; 
     padding: 3px 7px; 
     cursor: pointer;
     border-radius: 3px; 
@@ -55,37 +55,37 @@
 }
 
 
-#script-file-list {
+#script-file-list { /* This is the main scrollable container for all file items */
     flex-grow: 1;
     overflow-y: auto;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     font-size: 0.85em; 
-    padding: 5px; /* Padding for the list container itself */
+    padding: 5px; 
 }
 
 #script-file-list .script-file-item {
     display: flex;
     align-items: center;
-    padding: 6px 8px; /* Increased padding for items */
+    padding: 6px 8px; 
     cursor: default; 
-    border-radius: 3px; /* Slightly larger radius */
-    margin-bottom: 2px; /* Spacing between items */
-    color: #B0B0B0; /* Default item text color */
+    border-radius: 3px; 
+    margin-bottom: 2px; 
+    color: #B0B0B0; 
     transition: background-color 0.1s ease;
 }
 
 .level-thumbnail-container {
-    width: 48px; /* Increased size for better visibility */
-    height: 27px; /* 16:9 aspect for 48px width */
-    margin-right: 8px; /* More space next to thumbnail */
+    width: 48px; 
+    height: 27px; 
+    margin-right: 8px; 
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #181818; /* Darker placeholder bg */
-    border: 1px solid #0A0A0A; /* Border for thumbnail */
+    background-color: #181818; 
+    border: 1px solid #0A0A0A; 
     border-radius: 2px;
     overflow: hidden;
-    padding: 1px; /* Small internal padding if needed */
+    padding: 1px; 
 }
 .level-thumbnail-small {
     max-width: 100%;
@@ -93,19 +93,19 @@
     object-fit: cover;
 }
 .level-thumbnail-small.placeholder {
-    font-size: 18px; /* Emoji size */
-    line-height: 27px; /* Center emoji vertically */
+    font-size: 18px; 
+    line-height: 27px; 
     text-align: center;
-    color: #454545; /* Lighter placeholder emoji */
+    color: #454545; 
 }
 
 
 #script-file-list .script-file-item span.script-type-icon { 
     margin-right: 8px; 
-    min-width: 22px; /* Slightly wider for icon */
+    min-width: 22px; 
     text-align: center;
-    font-size: 1.1em; /* Adjust emoji icon size */
-    color: #888888; /* Dimmer default icon color */
+    font-size: 1.1em; 
+    color: #888888; 
 }
 
 #script-file-list .script-file-item span.file-name-span { 
@@ -116,24 +116,24 @@
     overflow: hidden;
     text-overflow: ellipsis;
     margin-right: 8px; 
-    color: inherit; /* Inherit color from .script-file-item */
+    color: inherit; 
     transition: color 0.1s ease;
 }
 
 #script-file-list .script-file-item:hover {
-    background-color: #303030; /* Darker hover for whole item */
-    color: #E0E0E0; /* Brighter text on hover for whole item */
+    background-color: #303030; 
+    color: #E0E0E0; 
 }
 #script-file-list .script-file-item:hover span.script-type-icon {
-    color: #B0B0B0; /* Slightly brighter icon on item hover */
+    color: #B0B0B0; 
 }
 
 
 #script-file-list .script-file-item.selected-script {
     background-color: #0D99FF; 
-    color: #FFFFFF !important; /* Ensure white text for selection */
-    border-left: 3px solid #007ACC; /* Add a selection indicator bar */
-    padding-left: 5px; /* Adjust padding to account for border */
+    color: #FFFFFF !important; 
+    border-left: 3px solid #007ACC; 
+    padding-left: 5px; 
 }
 
 #script-file-list .script-file-item.selected-script span.script-type-icon,
@@ -146,11 +146,11 @@
     display: flex;
     align-items: center;
     flex-shrink: 0; 
-    opacity: 0.7; /* Make controls less prominent by default */
+    opacity: 0.7; 
     transition: opacity 0.15s ease;
 }
 #script-file-list .script-file-item:hover .script-item-controls {
-    opacity: 1; /* Show controls fully on item hover */
+    opacity: 1; 
 }
 
 
@@ -159,10 +159,10 @@
     padding: 3px 5px; 
     font-size: 0.9em; 
     background-color: transparent; 
-    color: #999999; /* Slightly lighter default icon color */
+    color: #999999; 
     border: none;
     cursor: pointer;
-    border-radius: 3px; /* Consistent radius */
+    border-radius: 3px; 
     line-height: 1; 
     min-width: 22px; 
     text-align: center;
@@ -173,18 +173,18 @@
     color: #FFFFFF; 
 }
 .script-item-controls button.control-btn-small.delete-btn-small:hover {
-    background-color: #E53935; /* Use consistent red from properties panel */
+    background-color: #E53935; 
     color: white;
 }
 .script-item-controls button.control-btn-small:disabled {
     color: #555555 !important;
     background-color: transparent !important;
     cursor: not-allowed;
-    opacity: 0.5; /* Further dim disabled controls */
+    opacity: 0.5; 
 }
 
 .project-content-separator {
     border: none;
-    border-top: 1px solid #181818; /* Darker separator */
-    margin: 0; /* Remove margin, rely on header/list padding */
+    border-top: 1px solid #181818; 
+    margin: 0; 
 }

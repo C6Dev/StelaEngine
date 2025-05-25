@@ -81,7 +81,9 @@
                     <div id="viewer-container"></div>
                 </div>
                 <div id="script-editor-content" class="tab-content">
-                    <textarea id="script-input" rows="10" cols="50" placeholder="Example:
+                    <div id="script-editor-wrapper">
+                        <div id="line-numbers">1</div>
+                        <textarea id="script-input" spellcheck="false" rows="10" cols="50" placeholder="Example:
 // Script for the attached object
 if (key.SPACE) {
   object.position.y + 0.1;
@@ -98,6 +100,8 @@ if (game.isPlaying) {
 }
 
 print('My object is ' + object.name);"></textarea>
+                        <div id="suggestion-popup" style="display: none;"></div>
+                    </div>
                     <div id="script-controls">
                         <button id="run-update-btn">Recompile Open Script</button>
                         <button id="run-once-btn">Run For Selected</button>
